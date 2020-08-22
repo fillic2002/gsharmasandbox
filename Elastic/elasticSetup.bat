@@ -1,4 +1,5 @@
 curl https://www.7-zip.org/a/7z1900-x64.exe -o C:\software
+curl https://javadl.oracle.com/webapps/download/AutoDL?xd_co_f=YWU3ZDZiNTQtZDA5Yy00NWY0LWJkNzYtMWY0ODliZmUwZWI0&BundleId=242959_a4634525489241b9a9e1aa73d9e118e6 -o C:\software
 set PATH=%PATH%;C:\Program Files\7-Zip\
 curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.5.0-windows-x86_64.zip -o C:\software\e.zip
 curl https://artifacts.elastic.co/downloads/logstash/logstash-7.5.0.zip -o C:\software\l.zip
