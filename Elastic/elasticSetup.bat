@@ -1,18 +1,20 @@
+curl https://www.7-zip.org/a/7z1900-x64.exe -o C:\software
 set PATH=%PATH%;C:\Program Files\7-Zip\
-REM curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.5.0-windows-x86_64.zip -o C:\Users\fillic\Documents\Professional\binary\e.zip
-REM #curl https://artifacts.elastic.co/downloads/logstash/logstash-7.5.0.zip -o C:\Users\fillic\Documents\Professional\binary\l.zip
-REM #curl https://artifacts.elastic.co/downloads/kibana/kibana-7.5.0-windows-x86_64.zip -o C:\Users\fillic\Documents\Professional\binary\k.zip
-REM curl https://downloads.apache.org/kafka/2.6.0/kafka_2.13-2.6.0.tgz -o C:\Users\fillic\Documents\Professional\binary\kfk.tgz
-curl http://packages.treasuredata.com.s3.amazonaws.com/3/windows/td-agent-3.1.1-0-x64.msi -o C:\Users\fillic\Documents\Professional\binary\f.zip
+curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.5.0-windows-x86_64.zip -o C:\software\e.zip
+curl https://artifacts.elastic.co/downloads/logstash/logstash-7.5.0.zip -o C:\software\l.zip
+curl https://artifacts.elastic.co/downloads/kibana/kibana-7.5.0-windows-x86_64.zip -o C:\software\k.zip
+curl https://downloads.apache.org/kafka/2.6.0/kafka_2.13-2.6.0.tgz -o C:\software\kfk.tgz
+curl http://packages.treasuredata.com.s3.amazonaws.com/3/windows/td-agent-3.1.1-0-x64.msi -o C:\software\f.zip
+curl https://curl.haxx.se/windows/
 
-cd C:\Users\fillic\Documents\Professional\binary
-REM 7z x e.zip
-REM 7z x k.zip
-REM 7z x l.zip
-REM 7z x kfk.tgz
-REM 7z x kfk.tar
-REM del e.zip
-REM del k.zip
-REM del l.zip
-REM del kfk.tgz
-REM del kfk.tar
+cd C:\software
+ 7z x e.zip
+ 7z x k.zip
+ 7z x l.zip
+ 7z x kfk.tgz
+ 7z x kfk.tar
+ del e.zip
+ del k.zip
+ del l.zip
+ del kfk.tgz
+ del kfk.tar
