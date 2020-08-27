@@ -1,0 +1,24 @@
+actions:
+  1:
+    action: restore
+    description: restore emp indices
+    options:
+      repository: my_backup
+      name: my_backup
+      indices:
+      include_aliases: False
+      ignore_unavailable: False
+      include_global_state: False
+      partial: False
+      rename_pattern:
+      rename_replacement:
+      extra_settings:
+      wait_for_completion: True
+      skip_repo_fs_check: True
+      disable_action: false
+    filters:
+    - filtertype: pattern
+      kind: prefix
+      value: emp
+    - filtertype: state
+      state: SUCCESS

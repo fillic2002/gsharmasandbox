@@ -1,0 +1,11 @@
+actions:
+  1:
+    action: create_index
+    description: Create index on daily basis
+    options:
+      name: logggingfordate1
+      extra_settings:
+        settings:
+          number_of_shards: 2
+          number_of_replicas: 1
+      disable_action: false

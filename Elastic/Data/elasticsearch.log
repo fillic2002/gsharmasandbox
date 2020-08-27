@@ -1,0 +1,6 @@
+[2019-01-12T03:16:31,229][INFO ][o.e.x.m.MlDailyMaintenanceService] [jVJXdcO] triggering scheduled [ML] maintenance tasks
+[2019-01-12T03:16:31,385][INFO ][o.e.x.m.a.TransportDeleteExpiredDataAction] [jVJXdcO] Deleting expired data
+[2019-01-12T03:16:31,647][INFO ][o.e.x.m.a.TransportDeleteExpiredDataAction] [jVJXdcO] Completed deletion of expired data
+[2019-01-12T03:16:31,649][INFO ][o.e.x.m.MlDailyMaintenanceService] [jVJXdcO] Successfully completed [ML] maintenance tasks
+[2019-01-12T03:16:37,844][INFO ][o.e.c.m.MetaDataCreateIndexService] [jVJXdcO] [filebeat-6.5.0-2019.01.12] creating index, cause [auto(bulk api)], templates [filebeat-6.5.0], shards [3]/[1], mappings [doc]
+[2019-01-12T08:05:33,435][INFO ][o.e.c.m.MetaDataCreateIndexService] [jVJXdcO] [empl] creating index, cause [auto(bulk api)], templates [], shards [5]/[1], mappings []

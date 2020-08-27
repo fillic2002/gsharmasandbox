@@ -1,0 +1,22 @@
+actions:
+  1:
+    action: snapshot
+    description: Alksdl
+    options:
+      repository: my_backup
+      name: my_backup
+      ignore_unavailable: False
+      include_global_state: True
+      partial: False
+      wait_for_completion: True
+      skip_repo_fs_check: False
+      disable_action: false
+    filters:
+    - filtertype: pattern
+      kind: prefix
+      value: emp
+    - filtertype: age
+      source: creation_date
+      direction: older
+      unit: days
+      unit_count: 1

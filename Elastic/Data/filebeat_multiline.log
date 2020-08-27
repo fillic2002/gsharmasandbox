@@ -1,0 +1,37 @@
+2017-09-20 17:46:21.968 797SHARE-TPD-HE [4] Info: {Pack X} - PackStrategy is switched to Offline mode
+2017-09-20 17:46:22.379 797SHARE-TPD-HE [6] Info: ServiceRegion::t_ServiceChanged::Event Received, Service-Packaging Status-Connecting
+2017-09-20 17:46:53.065 797SHARE-TPD-HE [6] Error: ClientConnection`1::CreateConnection::System.TimeoutException: The open operation did not complete within the allotted timeout of 00:00:00. The time allotted to this operation may have been a portion of a longer timeout. ---> System.TimeoutException: Open timed out after 00:00:00 while establishing a transport session to google.com:9000. The time allotted to this operation may have been a portion of a longer timeout. ---> System.TimeoutException: Connecting to via google.com:9000/ timed out after 00:00:00. Connection attempts were made to 0 of 1 available addresses (). Check the RemoteAddress of your channel and verify that the DNS records for this endpoint correspond to valid IP Addresses. The time allotted to this operation may have been a portion of a longer timeout.
+   at System.ServiceModel.Channels.SocketConnectionInitiator.CreateTimeoutException(Uri uri, TimeSpan timeout, IPAddress[] addresses, Int32 invalidAddressCount, SocketException innerException)
+   at System.ServiceModel.Channels.SocketConnectionInitiator.Connect(Uri uri, TimeSpan timeout)
+   at System.ServiceModel.Channels.BufferedConnectionInitiator.Connect(Uri uri, TimeSpan timeout)
+   at System.ServiceModel.Channels.TracingConnectionInitiator.Connect(Uri uri, TimeSpan timeout)
+   at System.ServiceModel.Channels.ConnectionPoolHelper.EstablishConnection(TimeSpan timeout)
+   --- End of inner exception stack trace ---
+   at System.ServiceModel.Channels.ConnectionPoolHelper.EstablishConnection(TimeSpan timeout)
+   at System.ServiceModel.Channels.ClientFramingDuplexSessionChannel.OnOpen(TimeSpan timeout)
+   --- End of inner exception stack trace ---
+
+Server stack trace: 
+   at System.ServiceModel.Channels.ClientFramingDuplexSessionChannel.OnOpen(TimeSpan timeout)
+   at System.ServiceModel.Channels.CommunicationObject.Open(TimeSpan timeout)
+   at System.ServiceModel.Channels.ReliableChannelBinder`1.ChannelSynchronizer.SyncWaiter.TryGetChannel()
+   at System.ServiceModel.Channels.ReliableChannelBinder`1.ChannelSynchronizer.SyncWaiter.TryWait(TChannel& channel)
+   at System.ServiceModel.Channels.ReliableChannelBinder`1.ChannelSynchronizer.TryGetChannel(Boolean canGetChannel, Boolean canCauseFault, TimeSpan timeout, MaskingMode maskingMode, TChannel& channel)
+   at System.ServiceModel.Channels.ReliableChannelBinder`1.Send(Message message, TimeSpan timeout, MaskingMode maskingMode)
+   at System.ServiceModel.Channels.SendReceiveReliableRequestor.OnRequest(Message request, TimeSpan timeout, Boolean last)
+   at System.ServiceModel.Channels.ReliableRequestor.Request(TimeSpan timeout)
+   at System.ServiceModel.Channels.ClientReliableSession.Open(TimeSpan timeout)
+   at System.ServiceModel.Channels.ClientReliableDuplexSessionChannel.OnOpen(TimeSpan timeout)
+   at System.ServiceModel.Channels.CommunicationObject.Open(TimeSpan timeout)
+   at System.ServiceModel.Channels.ServiceChannel.OnOpen(TimeSpan timeout)
+   at System.ServiceModel.Channels.CommunicationObject.Open(TimeSpan timeout)
+   at System.ServiceModel.Channels.CommunicationObject.Open()
+
+Exception rethrown at [0]: 
+   at System.Runtime.Remoting.Proxies.RealProxy.HandleReturnMessage(IMessage reqMsg, IMessage retMsg)
+   at System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(MessageData& msgData, Int32 type)
+   at System.ServiceModel.ICommunicationObject.Open()
+   at GL.Client.Product.Proxy.ClientConnection`1.CreateConnection()
+2017-09-20 17:46:58.695 797SHARE-TPD-HE [6] Info: ServiceRegion::t_ServiceChanged::Event Received, Service-Packaging Status-Connected
+2017-09-20 17:46:58.717 797SHARE-TPD-HE [6] Info: {Pack X} - Pack X Service is switched to Online mode
+2017-09-20 17:46:58.717 797SHARE-TPD-HE [6] Info: {Pack X} - Current strategy switched to Online mode
