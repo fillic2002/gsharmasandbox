@@ -161,6 +161,18 @@ POST _analyze
   "analyzer": "keyword",
   "text": "The 2 QUICK Brown-Foxes jumped over the lazy dog's bone."
 }
+reindex api
+---------------------------------------------------
+POST _reindex
+{
+  "source": {
+    "index": "my-index-000001"
+  },
+  "dest": {
+    "index": "my-new-index-000001"
+  }
+}
+
 
 settings
 ----------------------------------------------------
