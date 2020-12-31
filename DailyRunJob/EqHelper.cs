@@ -4,13 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Equity;
+using Git_Sandbox.DailyRunJob;
 
 namespace DailyRunEquity
 {
 	public class Eqhelper
 	{
 		private GenericFunc _htmlHelper;
-		ExcelHelper _excelHelper;
+		//ExcelHelper _excelHelper;
+		//excelhelpernew _excelHelper;
 
 		public enum CompanyName
 		{
@@ -34,7 +36,8 @@ namespace DailyRunEquity
 		public Eqhelper()
 		{
 			_htmlHelper = new GenericFunc();
-			_excelHelper = new ExcelHelper();
+			//_excelHelper = new ExcelHelper();
+			//_excelHelper = new excelhelpernew();
 		}
 		public void fillShareDetails()
 		{
@@ -142,36 +145,41 @@ namespace DailyRunEquity
 			Console.WriteLine("Async Call Response Recieved:" + DateTime.Now);
 
 
-			_excelHelper.SaveToSharesWorksheet("Shares", s1, 3);
+			//_excelHelper.SaveToSharesWorksheet("Shares", s1, 3);
 			Console.WriteLine("Saved for s1:" + DateTime.Now);
-			_excelHelper.SaveToSharesWorksheet("Shares", s2, 10);
+			//_excelHelper.SaveToSharesWorksheet("Shares", s2, 10);
 			Console.WriteLine("Saved for s2:" + DateTime.Now);
 
-			_excelHelper.SaveToSharesWorksheet("Shares", s3, 12);
+			//_excelHelper.SaveToSharesWorksheet("Shares", s3, 12);
 			Console.WriteLine("Saved for s3:" + DateTime.Now);
 
-			_excelHelper.SaveToSharesWorksheet("Shares", s4, 17);
+			//_excelHelper.SaveToSharesWorksheet("Shares", s4, 17);
 			Console.WriteLine("Saved for s4:" + DateTime.Now);
-			_excelHelper.SaveToSharesWorksheet("Shares", s5, 21);
+			//_excelHelper.SaveToSharesWorksheet("Shares", s5, 21);
 			Console.WriteLine("Saved for s5:" + DateTime.Now);
 
-			_excelHelper.SaveToSharesWorksheet("Shares", s13, 27);
+			//_excelHelper.SaveToSharesWorksheet("Shares", s13, 27);
 			Console.WriteLine("Saved for s13:" + DateTime.Now);
 
-			_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s6, 3,((int)CompanyName.GAIL)+60);
+			//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s6, 3,((int)CompanyName.GAIL)+60);
 			Console.WriteLine("Saved for s6:" + DateTime.Now);
 			
-			_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s7, 3, ((int)CompanyName.MAHANAGAR) + 60);
-			_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s8, 3, ((int)CompanyName.NESCO) + 60);
-			_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s9, 3, ((int)CompanyName.KOVAIMEDICAL) + 60);
-			_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s10, 3, ((int)CompanyName.TATACHEMICAL) + 60);
-			_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s11, 3, ((int)CompanyName.BEL) + 60);
-			_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s12, 3, ((int)CompanyName.GIC) + 60);
+			//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s7, 3, ((int)CompanyName.MAHANAGAR) + 60);
+			//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s8, 3, ((int)CompanyName.NESCO) + 60);
+			//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s9, 3, ((int)CompanyName.KOVAIMEDICAL) + 60);
+			//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s10, 3, ((int)CompanyName.TATACHEMICAL) + 60);
+			//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s11, 3, ((int)CompanyName.BEL) + 60);
+			//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s12, 3, ((int)CompanyName.GIC) + 60);
 
 			Console.WriteLine("Saved all records:" + DateTime.Now.ToString("hh.mm.ss.ffffff"));
-			_excelHelper.CloseExcel();
+			//_excelHelper.CloseExcel();
 
 			//Console.ReadKey();
+		}
+
+		public void ReadNewExcel()
+		{
+			excelhelpernew.ReadExcelFile();
 		}
 	}
 }

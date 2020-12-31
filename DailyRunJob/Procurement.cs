@@ -13,7 +13,7 @@ namespace DailyRunEquity
 {
 	public class Procurement
 	{
-		private string _eprocUrl ="https://eproc.karnataka.gov.in/eprocurement/common/eproc_tenders_list.seam";
+		//private string _eprocUrl ="https://eproc.karnataka.gov.in/eprocurement/common/eproc_tenders_list.seam";
 		private GenericFunc _htmlHelper = new GenericFunc();
 		public string ShowProcurementInfo()
 		{

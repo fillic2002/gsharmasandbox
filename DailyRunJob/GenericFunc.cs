@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
+//using System.Web.Script.Serialization;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -259,18 +259,18 @@ namespace Equity
 						s = s.Replace("suggest1([", "");
 						s = s.Replace("])", "");
 
-						JavaScriptSerializer js = new JavaScriptSerializer();
-						object obj = js.DeserializeObject(s);
-						object companyid = "", companyname = "";
-						foreach (string key in ((Dictionary<string, object>)obj).Keys)
-						{
-							if (key == "sc_id")
-								companyid = ((Dictionary<string, object>)obj)[key];
-							if (key == "stock_name")
-								companyname = ((Dictionary<string, object>)obj)[key];
+						//JavaScriptSerializer js = new JavaScriptSerializer();
+						//object obj = js.DeserializeObject(s);
+						//object companyid = "", companyname = "";
+						//foreach (string key in ((Dictionary<string, object>)obj).Keys)
+						//{
+						//	if (key == "sc_id")
+						//		companyid = ((Dictionary<string, object>)obj)[key];
+						//	if (key == "stock_name")
+						//		companyname = ((Dictionary<string, object>)obj)[key];
 
-						}
-						GetROCEForCompany(CompanyMasterList, companyid.ToString(), companyname.ToString());
+						//}
+						//GetROCEForCompany(CompanyMasterList, companyid.ToString(), companyname.ToString());
 					}
 				}
 			}catch(Exception ex)

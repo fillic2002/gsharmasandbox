@@ -6,6 +6,7 @@ using System.Reflection;
 
 using HtmlAgilityPack;
 using Microsoft.Office.Interop.Excel;
+using Range = Microsoft.Office.Interop.Excel.Range;
 
 namespace Equity
 {
@@ -260,11 +261,11 @@ namespace Equity
 			{
 				Range script = (Range)sh.Cells[i, 1];
 				Range companyName = (Range)sh.Cells[i, 2];
-				_companyName.Add(script.Value2, companyName.Value2);
-				if (script.Value2 > 0 )
+				_companyName.Add((double)script.Value2, companyName.Value2.ToString());
+				if ((int)script.Value2 > 0 )
 				{
-					_masterScriptList.Add(script.Value2, new Dictionary<int, string>());
-					_scriptList.Add(script.Value2);
+					_masterScriptList.Add((double)script.Value2, new Dictionary<int, string>());
+					_scriptList.Add((double)script.Value2);
 					 
 				}
 			}
@@ -307,7 +308,7 @@ namespace Equity
 						//thirdYearRange.Value2 = _thirdYear; //GetShareHoldingPattern((double)range.Value2, "89.00");
 						#endregion
 						#region Get last five year revenue
-							GetBalanceSheetDetails(range.Value2);
+							GetBalanceSheetDetails((double)range.Value2);
 							y2016.Value2 = _y2016;
 							y2015.Value2 = _y2015;
 							y2014.Value2 = _y2014;
@@ -356,27 +357,27 @@ namespace Equity
 				Microsoft.Office.Interop.Excel.Range c = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 5];
 				if (y.Value2 != null)
 				{
-					if (DateTime.FromOADate(y.Value2) >= fy2015)
+					if (DateTime.FromOADate((double)y.Value2) >= fy2015)
 					{
-						y2015Closing += c.Value2;
+						y2015Closing += (double)c.Value2;
 						Days2015++;
 						continue;
 					}
-					else if (DateTime.FromOADate(y.Value2) >= fy2014)
+					else if (DateTime.FromOADate((double)y.Value2) >= fy2014)
 					{
-						y2014Closing += c.Value2;
+						y2014Closing += (double)c.Value2;
 						Days2014++;
 						continue;
 					}
-					else if (DateTime.FromOADate(y.Value2) >= fy2013)
+					else if (DateTime.FromOADate((double)y.Value2) >= fy2013)
 					{
-						y2013Closing += c.Value2;
+						y2013Closing += (double)c.Value2;
 						Days2013++;
 						continue;
 					}
-					else if (DateTime.FromOADate(y.Value2) >= fy2012)
+					else if (DateTime.FromOADate((double)y.Value2) >= fy2012)
 					{
-						y2012Closing += c.Value2;
+						y2012Closing +=(double)c.Value2;
 						Days2012++;
 						continue;
 					}
@@ -506,7 +507,7 @@ namespace Equity
 				Microsoft.Office.Interop.Excel.Range ColumnTobeUpdated = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, ColumnId];
 				if (ColumnTobeUpdated.Value2 == null)
 				{
-					_currentValues.Add(CompanyCode.Value2);
+					_currentValues.Add((double)CompanyCode.Value2);
 					Console.WriteLine("Script Added" + i);
 				}			
 			}
