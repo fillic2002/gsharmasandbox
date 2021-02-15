@@ -11,8 +11,9 @@ namespace Git_Sandbox.DailyRunJob
 		public CsvUserDetailsMapping()
 			: base()
 		{
-			MapProperty(0, x => x.SC_CODE);
-			MapProperty(1, x => x.SC_NAME);
+			MapProperty(0, x => x.Symbol);
+			MapProperty(1, x => x.Companyname);
+			MapProperty(6, x => x.ISIN);
 
 		}
 	}

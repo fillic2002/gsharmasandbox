@@ -46,7 +46,8 @@ namespace Git_Sandbox
             //     }
             // }
             Eqhelper obj = new Eqhelper();
-            obj.ReadNewExcel();
+            obj.fillShareDetailsAsync();
+            //obj.ReadNewExcel();
 
             Procurement objPro = new Procurement();
             var result = objPro.ShowProcurementInfo();

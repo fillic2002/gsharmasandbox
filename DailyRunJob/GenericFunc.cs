@@ -187,11 +187,18 @@ namespace Equity
 
 		}
 
-		public string GetMFNAV(int MFItem)
+		public async Task<double> GetMFNAVAsync(string url)
 		{
-			HtmlDocument doc = web.Load(MF_WATCH[MFItem]);
-			return doc.DocumentNode.SelectNodes("//div[@class='leftblok']//span[@class='amt']")[0].InnerHtml.Split(' ')[1];
-			//return doc.DocumentNode.SelectNodes("//div[@class='mufndBx']//div[@class='pcnsb']//span[@class='stprh colo_black']")[0].InnerHtml;
+			try
+			{
+				HtmlDocument doc = web.Load(url);
+				var s = doc.DocumentNode.SelectNodes("//input[@id='nsespotval']")[0].Attributes["Value"].Value;
+				return Convert.ToDouble(s);
+			}
+			catch(Exception ex)
+			{
+				return 0;
+			}
 		}
 
 		public IList<string> GetBDAProcurementDetails()

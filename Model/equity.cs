@@ -7,24 +7,25 @@ namespace Git_Sandbox.Model
 {
 	public class equity
 	{
-		public string SC_CODE { get; set; }
-		public string SC_NAME { get; set; }
-		public string SC_GROUP;
-		public string SC_TYPE;
-		public string OPEN;
-		public string HIGH;
-		public string LOW;
-		public string CLOSE;
-		public string LAST;
-		public string PREVCLOSE;
-		public string NO_TRADES;
-		public string NO_OF_SHRS;
-		public string NET_TURNOV;
-		public string TDCLOINDI;
-		public string ISIN_CODE;
-		public string TRADING_DATE;
-		public string FILLER2;
-		public string FILLER3;
+		public string Symbol { get; set; }
+		public string Companyname { get; set; }
+		//public string Series;
+		//public string Date;
+		//public string DATEOFLISTING;
+		//public string PAIDUPVALUE;
+		//public string MARKETLOT;
+		public string ISIN { get; set; }
+		//public string FACEVALUE;
+		public double LivePrice;
+
+		public string sourceurl;
+		//public string NO_OF_SHRS;
+		//public string NET_TURNOV;
+		//public string TDCLOINDI;
+		//public string ISIN;
+		//public string TRADING_DATE;
+		//public string FILLER2;
+		//public string FILLER3;
 	}
 	
 }

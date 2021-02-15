@@ -18,15 +18,15 @@ namespace Git_Sandbox.DailyRunJob
             CsvUserDetailsMapping csvMapper = new CsvUserDetailsMapping();
             CsvParser<equity> csvParser = new CsvParser<equity>(csvParserOptions, csvMapper);
             var result = csvParser
-                         .ReadFromFile(@"C:\Users\fillic\Documents\github\myfinAPI\data\EQ_ISINCODE_011220.CSV", Encoding.ASCII)
+                         .ReadFromFile(@"C:\Users\fillic\Downloads\EQUITY_L.CSV", Encoding.ASCII)
                         .ToList();
-            Console.WriteLine("Name " + "ID   " + "City  " + "Country");
+            //Console.WriteLine("Name " + "ID   " + "City  " + "Country");
 			foreach (var details in result)
 			{
                 try
                 {
-                    Console.WriteLine("Adding to db:" + details.Result.SC_NAME + " " + details.Result.SC_CODE);
-                    component.getMySqlObj().AddAssetDetails(new equity() { SC_NAME = details.Result.SC_NAME, SC_CODE = details.Result.SC_CODE });
+                    //Console.WriteLine("Adding to db:" + details.Result + " " + details.Result.SC_CODE);
+                    component.getMySqlObj().AddAssetDetails(new equity() { Symbol = details.Result.Symbol, Companyname = details.Result.Companyname,ISIN=details.Result.ISIN });
                 }
                 catch(Exception ex)
 				{
