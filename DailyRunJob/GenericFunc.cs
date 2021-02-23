@@ -4,7 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Git_Sandbox.DailyRunJob;
+using Git_Sandbox.Model;
 //using System.Web.Script.Serialization;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
@@ -187,18 +190,42 @@ namespace Equity
 
 		}
 
-		public async Task<double> GetMFNAVAsync(string url)
+		public async Task<double> GetMFNAVAsync(equity eq)
 		{
 			try
 			{
-				HtmlDocument doc = web.Load(url);
-				var s = doc.DocumentNode.SelectNodes("//input[@id='nsespotval']")[0].Attributes["Value"].Value;
-				return Convert.ToDouble(s);
+				HtmlDocument doc = web.Load( eq.sourceurl);
+				string result="0";
+				if (eq.assetType ==1)
+					result = doc.DocumentNode.SelectNodes("//input[@id='nsespotval']")[0].Attributes["Value"].Value;
+				else
+					result = doc.DocumentNode.SelectNodes("//span[@class='amt']")[0].InnerText.Split(' ')[1];
+				return Convert.ToDouble(result);
 			}
 			catch(Exception ex)
 			{
 				return 0;
 			}
+		}
+		public void GetDividend(dividend d,string url)
+		{
+			try
+			{
+				HtmlDocument doc = web.Load(url);
+				string result = "0";
+				Thread.Sleep(3000);
+				result = doc.DocumentNode.SelectNodes("//table[@class='mctable1']")[0].InnerText.Split(' ')[1];				 
+			}
+			catch (Exception ex)
+			{
+				string s = ex.StackTrace;
+			}
+		}
+
+		public IList<string> GetEquityLinks()
+		{
+			var s= component.getMySqlObj().GetPortfolioAssetUrl().Select(x=>x.sourceurl);
+			return s.ToList<string>();
 		}
 
 		public IList<string> GetBDAProcurementDetails()
@@ -340,6 +367,6 @@ namespace Equity
 
 		}
 		
-
+		
 	}
 }

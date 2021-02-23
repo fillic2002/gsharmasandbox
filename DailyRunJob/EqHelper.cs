@@ -37,19 +37,8 @@ namespace DailyRunEquity
 			NIACL=13,
 			BPCL=14
 		}
-		//static  IEnumerable<string> s_urlList;
 		static IList<equity> equity=new List<equity>();
-		//= new string[]
-		//{
-		//	"https://www.moneycontrol.com/india/stockpricequote/oil-drilling-and-exploration/gailindia/GAI",
-		//	"https://www.moneycontrol.com/india/stockpricequote/electricals/bharatelectronics/BE03",
-		//	"https://www.moneycontrol.com/india/stockpricequote/diversified/nesco/NES",
-		//	"https://www.moneycontrol.com/india/stockpricequote/refineries/mahanagargas/MG02",
-		//	"https://www.moneycontrol.com/india/stockpricequote/hospitals-medical-services/kovaimedicalcenterhospital/KMC02",
-		//	"https://www.moneycontrol.com/india/stockpricequote/chemicals/tatachemicals/TC",
-		//	"https://www.moneycontrol.com/india/stockpricequote/diversified/generalinsurancecorporationindia/GIC12"
-
-		//};
+	
 		static readonly HttpClient s_client = new HttpClient
 		{
 			MaxResponseContentBufferSize = 1_000_000
@@ -57,7 +46,6 @@ namespace DailyRunEquity
 		public Eqhelper()
 		{
 			_htmlHelper = new GenericFunc();
-
 		 
 			equity = component.getMySqlObj().GetPortfolioAssetUrl();
 		}
@@ -78,10 +66,8 @@ namespace DailyRunEquity
 				Task<equity> finishedTask = await Task.WhenAny(downloadTasks);
 				downloadTasks.Remove(finishedTask);
 				if (finishedTask.Status != TaskStatus.Faulted)
-				{
-					 
-						Console.WriteLine("DB Update::" + component.getMySqlObj().UpdateLatesNAV(finishedTask.Result.ISIN, finishedTask.Result.LivePrice));
-					 
+				{				 
+						Console.WriteLine("DB Update::" + component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));					 
 				}
 				
 				//total += await finishedTask;
@@ -91,119 +77,6 @@ namespace DailyRunEquity
 			Console.WriteLine($"\nTotal bytes returned:  {total:#,#}");
 			Console.WriteLine($"Elapsed time:          {stopwatch.Elapsed}\n");
 
-		//	Task task1 = Task.Factory.StartNew(()=> 
-		//		{
-		//			int id = (int)CompanyName.GAIL;
-		//		//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//			Console.WriteLine("Fetching from "+  _currentNav.Keys);
-		//		}
-		//	);
-			
-		////	string s2=string.Empty;
-		//	Task task2 = Task.Factory.StartNew(() =>
-		//		{
-		//			int id = (int)CompanyName.HAL;
-		//		//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//	//		Console.WriteLine("Fetching from Task2");
-		//		}
-		//	);
-			
-		////	string s3= string.Empty; 
-		//	Task task3 = Task.Factory.StartNew(() =>
-		//		{
-		//			//s3 = _htmlHelper.GetMFNAV(3);
-		//			int id = (int)CompanyName.SRIKALAHASTI;
-		////			_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//	//		Console.WriteLine("Fetching from Task3");
-		//		}
-		//	);
-			 
-		////	string s4= string.Empty; 
-		//	Task task4 = Task.Factory.StartNew(()=>
-		//		{
-		//			int id = (int)CompanyName.PETRONETLNG;
-		//	//		_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//	//		Console.WriteLine("Fetching from Task4");
-		//		}
-		//	);
-
-		////	string s5 = string.Empty;
-		//	Task task5 = Task.Factory.StartNew(() =>
-		//	{
-		//		int id = (int)CompanyName.PETRONETLNG;
-		////		_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//	//	Console.WriteLine("Fetching from Task5");
-		//	}
-		//	);
-		////	string s6 = string.Empty;
-		//	Task task6 = Task.Factory.StartNew(() =>
-		//	{
-		//		int id = (int)CompanyName.PETRONETLNG;
-		//	//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//	//	Console.WriteLine("Fetching For GAIL:"+ s6.ToString());
-		//	}
-		//	);
-		////	string s7 = string.Empty;
-		//	Task task7 = Task.Factory.StartNew(() =>
-		//	{
-		//		int id = (int)CompanyName.PETRONETLNG;
-		//	//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//		//Console.WriteLine("Fetching for MAHANAGAE GAS:"+s7.ToString());
-		//	}
-		//	);
-		////	string s8 = string.Empty;
-		//	Task task8 = Task.Factory.StartNew(() =>
-		//	{
-		//		int id = (int)CompanyName.PETRONETLNG;
-		//	//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//		//Console.WriteLine("Fetching For NESCO:"+ s8.ToString());
-		//	}
-		//	);
-
-		////	string s9 = string.Empty;
-		//	Task task9 = Task.Factory.StartNew(() =>
-		//	{
-		//		int id = (int)CompanyName.PETRONETLNG;
-		//	//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//		//Console.WriteLine("Fetching For KOVAI:" + s9.ToString());
-		//	}
-		//	);
-		//	string s10 = string.Empty;
-		//	Task task10 = Task.Factory.StartNew(() =>
-		//	{
-		//		int id = (int)CompanyName.PETRONETLNG;
-		//	//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//		//Console.WriteLine("Fetching For TataChemical:" + s10.ToString());
-		//	}
-		//	);
-		//	string s11 = string.Empty;
-		//	Task task11 = Task.Factory.StartNew(() =>
-		//	{
-		//		int id = (int)CompanyName.BEL;
-		//	//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//		//Console.WriteLine("Fetching For BEL:" + s11.ToString());
-		//	}
-		//	);
-		//	string s12 = string.Empty;
-		//	Task task12 = Task.Factory.StartNew(() =>
-		//	{
-		//	int id = (int)CompanyName.GIC;
-		//	//	_currentNav.Add(id, Convert.ToDouble(_htmlHelper.GetMFNAV(id)));
-		//	//	Console.WriteLine("Fetching For GIC:" + s12.ToString());
-		//	}
-		//	);
-		//	string s13 = string.Empty;
-		//	Task task13 = Task.Factory.StartNew(() =>
-		//	{
-		//	//	s13 = _htmlHelper.GetMFNAV(6);
-		//		//_currentNav.Add(7, Convert.ToDouble(_htmlHelper.GetMFNAV(7)));
-		//		Console.WriteLine("Fetching from Task13");
-		//	}
-		//	);
-
-
-		//	Console.WriteLine("Async Call Finished:" + DateTime.Now);
-			//Task.WaitAll(task1, task2, task3, task4, task5,task6,task7,task8,task9,task10);
 			//Console.WriteLine("Async Call Response Recieved:" + DateTime.Now);
 
 
@@ -250,12 +123,32 @@ namespace DailyRunEquity
 		}
 		async Task<equity> ProcessUrlAsync(equity item)
 		{
-			//byte[] content = await _.GetByteArrayAsync(url);
-			//	Console.WriteLine($"{url,-60} {content.Length,10:#,#}");
-			
-			item.LivePrice =	await _htmlHelper.GetMFNAVAsync(item.sourceurl);
+			item.LivePrice = await _htmlHelper.GetMFNAVAsync(item);
 			//Console.WriteLine(val);			
 			return item;
+		}
+
+		public void AddDividendDetails()
+		{
+			dividend obj = new dividend();
+			GetCompanyDetails(obj);
+			//component.getMySqlObj().AddDividendDetails(obj);
+		}
+
+		private void GetCompanyDetails(dividend d)
+		{
+			IList<string> Listurl = component.getGenericFunctionObj().GetEquityLinks();
+			foreach(string u in Listurl)
+			{
+				component.getWebScrappertObj().GetDividend(u);
+				string newurl=u.Replace("india/stockpricequote/miscellaneous", "company-facts");
+				string obj = u.Split('/').Last();
+				newurl = newurl.Replace(u.Split('/').Last(), "dividends/" + obj + "#" + obj);
+				
+				//component.getGenericFunctionObj().GetDividend(d, newurl);
+			}
+			
+			
 		}
 	}
 }
