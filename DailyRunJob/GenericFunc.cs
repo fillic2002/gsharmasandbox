@@ -222,10 +222,10 @@ namespace Equity
 			}
 		}
 
-		public IList<string> GetEquityLinks()
+		public IList<equity> GetEquityLinks()
 		{
-			var s= component.getMySqlObj().GetPortfolioAssetUrl().Select(x=>x.sourceurl);
-			return s.ToList<string>();
+			IEnumerable<equity> listPortfolio= component.getMySqlObj().GetPortfolioAssetUrl().Distinct<equity>();
+			return listPortfolio.ToList();
 		}
 
 		public IList<string> GetBDAProcurementDetails()

@@ -131,24 +131,13 @@ namespace DailyRunEquity
 		public void AddDividendDetails()
 		{
 			dividend obj = new dividend();
-			GetCompanyDetails(obj);
-			//component.getMySqlObj().AddDividendDetails(obj);
-		}
-
-		private void GetCompanyDetails(dividend d)
-		{
-			IList<string> Listurl = component.getGenericFunctionObj().GetEquityLinks();
-			foreach(string u in Listurl)
+			 
+		 
+			IList<equity> Listurl = component.getGenericFunctionObj().GetEquityLinks();
+			foreach(equity u in Listurl)
 			{
 				component.getWebScrappertObj().GetDividend(u);
-				string newurl=u.Replace("india/stockpricequote/miscellaneous", "company-facts");
-				string obj = u.Split('/').Last();
-				newurl = newurl.Replace(u.Split('/').Last(), "dividends/" + obj + "#" + obj);
-				
-				//component.getGenericFunctionObj().GetDividend(d, newurl);
-			}
-			
-			
+			}			
 		}
 	}
 }

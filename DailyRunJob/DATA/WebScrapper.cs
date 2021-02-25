@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using Git_Sandbox.Model;
 
 namespace Git_Sandbox.DailyRunJob.DATA
 {
@@ -16,48 +17,39 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			if(_driver !=null)
 				_driver.Quit();
 		}
-		public void GetDividend(string url)
+		public void GetDividend(equity e)
 		{
 
-			if (url.Contains("mutual-funds"))
+			if (e.sourceurl.Contains("mutual-funds"))
 				return;
-			
 			
 			try
 			{
-
-					_driver = new ChromeDriver();
-					//if (folio.equityType == 1)			
-					//{
-
-						_driver.Navigate().GoToUrl(url);
-						Thread.Sleep(1500);
+				dividend item = new dividend();
+				item.companyid = e.ISIN;
+				_driver = new ChromeDriver();
+				_driver.Navigate().GoToUrl(e.sourceurl);
+				Thread.Sleep(150);
 				IList<IWebElement> links = _driver.FindElements(By.TagName("a"));
 				foreach(IWebElement link in links)
 				{
 					string s= link.GetAttribute("href");
 					if(s!=null && s.Contains("dividend"))
 					{
-						link.Click();
-						//break;
+						link.Click();					 
 					}
 				}
-				var data= _driver.FindElements(By.XPath("//*[@id='mc_content']/div[2]/section[2]/div/div[2]/table/tbody"));
-																		  
-				 
-				var dividend = Convert.ToDouble(_driver.FindElements(By.Id("quoteLtp"))[0].Text);						
+				var newTabHandle = _driver.WindowHandles[1];
+				var newTab = _driver.SwitchTo().Window(newTabHandle).PageSource;
 
-					//}
-					// else
-					//{	
-					//	_driver.Navigate().GoToUrl(_eq.desctiption);
-					//	Thread.Sleep(1000);
-					//	//_eq.livePrice = Convert.ToDouble(
-					//	_eq.livePrice=Convert.ToDouble(_driver.FindElements(By.ClassName("amt"))[0].Text.Substring(1));
+				var data= _driver.FindElements(By.XPath("//*[@id='mc_content']/div[2]/section[2]/div/div[2]/table/tbody/tr[1]/td[5]"))[0].Text;
+				var dtt= _driver.FindElements(By.XPath("//*[@id='mc_content']/div[2]/section[2]/div/div[2]/table/tbody/tr[1]/td[1]"))[0].Text;
+				item.dt = Convert.ToDateTime(dtt);
+				item.value = Convert.ToDouble(data.Split(' ')[0].Replace("Rs.", ""));
 
-					//}
-					//ComponentFactory.GetMySqlObject().UpdateLivePrice(folio.EquityId, _eq.livePrice);
-					Dispose();
+
+				component.getMySqlObj().AddDividendDetails(item);
+				Dispose();
 				//return Convert.ToDouble(dividend);
 				}
 
