@@ -90,7 +90,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"insert into myfin.dividend(isin,dividend,dtupdated) values('"+item.companyid+"','"+item.value+"','"+item.dt.ToString("yyyy-MM-dd") + "');", _conn);
+				using var command = new MySqlCommand(@"REPLACE into myfin.dividend(isin,dividend,dtupdated) values('"+item.companyid+"','"+item.value+"','"+item.dt.ToString("yyyy-MM-dd") + "');", _conn);
 				int  reader = command.ExecuteNonQuery();
 				 
 				return true;

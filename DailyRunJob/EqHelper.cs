@@ -49,10 +49,8 @@ namespace DailyRunEquity
 		 
 			equity = component.getMySqlObj().GetPortfolioAssetUrl();
 		}
-		public async Task fillShareDetailsAsync()
+		public async Task fillShareDetails()
 		{
-
-
 			var stopwatch = Stopwatch.StartNew();
 			IEnumerable<Task<equity>> downloadTasksQuery =
 				   from item in equity
@@ -67,7 +65,7 @@ namespace DailyRunEquity
 				downloadTasks.Remove(finishedTask);
 				if (finishedTask.Status != TaskStatus.Faulted)
 				{				 
-						Console.WriteLine("DB Update::" + component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));					 
+					Console.WriteLine("DB Update::" +  component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
 				}
 				
 				//total += await finishedTask;
@@ -123,7 +121,7 @@ namespace DailyRunEquity
 		}
 		async Task<equity> ProcessUrlAsync(equity item)
 		{
-			item.LivePrice = await _htmlHelper.GetMFNAVAsync(item);
+			item.LivePrice = await _htmlHelper.GetAssetNAVAsync(item);
 			//Console.WriteLine(val);			
 			return item;
 		}

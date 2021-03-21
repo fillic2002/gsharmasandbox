@@ -173,31 +173,28 @@ namespace Equity
 				var LTP = Convert.ToDouble(doc.DocumentNode.SelectSingleNode("//div[@id='quatre']//table//tr[2]//td[2]").InnerText);
 
 				Dictionary<int, string> TotalShareColumn = new Dictionary<int, string>();
-
 				//Column 4 is Total Share in Revenue sheet
 				TotalShareColumn.Add(4, TotalShare.ToString());
 				TotalShareColumn.Add(5, LTP.ToString());
 
 				CompanyMasterList[CompanyId] = TotalShareColumn;
-
 			}
 			catch (Exception ex)
 			{
 				Console.WriteLine("Exception for item:" + ex);
-
 			}
-
-
 		}
 
-		public async Task<double> GetMFNAVAsync(equity eq)
+		public async Task<double> GetAssetNAVAsync(equity eq)
 		{
 			try
 			{
 				HtmlDocument doc = web.Load( eq.sourceurl);
+				Thread.Sleep(1500);
 				string result="0";
 				if (eq.assetType ==1)
-					result = doc.DocumentNode.SelectNodes("//input[@id='nsespotval']")[0].Attributes["Value"].Value;
+					//*[@id="idcrval"]
+					result = doc.DocumentNode.SelectNodes("//*[@id='idcrval']")[0].Attributes["Value"].Value;
 				else
 					result = doc.DocumentNode.SelectNodes("//span[@class='amt']")[0].InnerText.Split(' ')[1];
 				return Convert.ToDouble(result);
