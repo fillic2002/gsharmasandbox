@@ -45,11 +45,18 @@ namespace Git_Sandbox
             //         Console.WriteLine($"Delivery failed: {e.Error.Reason}");
             //     }
             // }
-            Eqhelper obj = new Eqhelper();
-            obj.fillShareDetails();
 
-            // Add last 
-            obj.AddDividendDetails();
+            //Get all the latest NAV for shares
+            Eqhelper obj = new Eqhelper();
+            //obj.UpdateShareCurrentPrice();
+
+            // Add dividend details that are updated in bse in last 90 days
+            //obj.AddDividendDetails();
+
+            //Update Monthly asset details
+
+            obj.UpdateMonthlyAsset(9,2020);
+
             //obj.ReadNewExcel();
 
             Procurement objPro = new Procurement();

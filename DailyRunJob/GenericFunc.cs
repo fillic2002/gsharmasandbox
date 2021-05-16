@@ -190,11 +190,13 @@ namespace Equity
 			try
 			{
 				HtmlDocument doc = web.Load( eq.sourceurl);
-				Thread.Sleep(1500);
+				Thread.Sleep(2000);
 				string result="0";
-				if (eq.assetType ==1)
-					//*[@id="idcrval"]
-					result = doc.DocumentNode.SelectNodes("//*[@id='idcrval']")[0].Attributes["Value"].Value;
+				if (eq.assetType == AssetType.Shares)
+				{
+					result = doc.DocumentNode.SelectNodes("//*[@id='bsecp']")[0].InnerText;
+					Console.WriteLine("Price for id:" +eq.ISIN +" Is:" + result.ToString());
+				}
 				else
 					result = doc.DocumentNode.SelectNodes("//span[@class='amt']")[0].InnerText.Split(' ')[1];
 				return Convert.ToDouble(result);
@@ -221,7 +223,7 @@ namespace Equity
 
 		public IList<equity> GetEquityLinks()
 		{
-			IEnumerable<equity> listPortfolio= component.getMySqlObj().GetPortfolioAssetUrl().Distinct<equity>();
+			IEnumerable<equity> listPortfolio= component.getMySqlObj().GetEquityNavUrl().Distinct<equity>();
 			return listPortfolio.ToList();
 		}
 

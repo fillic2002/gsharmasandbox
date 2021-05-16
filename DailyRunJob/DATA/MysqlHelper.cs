@@ -25,8 +25,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 		}
 
-
-
 		public bool UpdateLatesNAV(equity eq)
 		{
 			if (eq.LivePrice <= 0)
@@ -42,12 +40,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			return true;
 		}
 
-		public IList<equity> GetPortfolioAssetUrl()
+		public IList<equity> GetEquityNavUrl()
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"select isin, description,assettypeid from myfin.equitydetails where myfin.equitydetails.description IS NOT NULL;", _conn);
+				using var command = new MySqlCommand(@"select isin, divlink,assettypeid,description from myfin.equitydetails where myfin.equitydetails.description IS NOT NULL;", _conn);
 				using var reader = command.ExecuteReader();
 				IList<equity> eq = new List<equity>();
 				while (reader.Read())
@@ -56,7 +54,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						ISIN = reader["isin"].ToString(),
 						sourceurl = reader["description"].ToString(),
-						assetType = (int)reader["assettypeid"]
+						assetType = (AssetType)((int)reader["assettypeid"]),
+						divUrl = reader["divlink"].ToString()
 					});
 				}
 				return eq;
@@ -78,7 +77,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						ISIN = reader["isin"].ToString(),
 						sourceurl = reader["description"].ToString(),
-						assetType = (int)reader["assettypeid"]
+						assetType = (AssetType)(int)reader["assettypeid"]
 					});
 				}
 				return true;
@@ -96,5 +95,110 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				return true;
 			}
 		}
+
+		public void GetStaleDividendCompanies(IList<dividend> item)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"Select distinct(isin) from myfin.dividend
+										where isin not in(
+										SElect distinct(isin)
+										from myfin.dividend
+										where datediff(curdate() ,dtupdated )<=90);", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					item.Add(new dividend()
+					{						
+						companyid= reader["isin"].ToString()
+					});
+				}
+			}
+		}
+
+		public void GetTransactions(IList<EquityTransaction> p, int portfolioId)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"SELECT et.*,ed.liveprice,ed.assettypeid FROM myfin.equitytransactions et
+							Join myfin.equitydetails ed
+							ON ed.isin=et.isin
+							where portfolioid=" + portfolioId + ";", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					p.Add(new EquityTransaction()
+					{
+						equity= new equity(){ISIN = reader["isin"].ToString(), LivePrice= Convert.ToDouble(reader["liveprice"]),assetType= (AssetType)Convert.ToInt32(reader["assettypeid"]) },						
+						price = Convert.ToDouble(reader["price"]),
+						portfolioId = Convert.ToInt16(reader["portfolioid"]),
+						TransactionDate= Convert.ToDateTime(reader["TransactionDate"]),
+						TypeofTransaction =Convert.ToChar(reader["action"]),
+						qty = Convert.ToInt32(reader["qty"]),					
+
+					});
+				}
+			}
+		}
+
+		public void GetDividend(IList<dividend> d, int portfolioId)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@" SELECT * FROM myfin.dividend 
+					Where isin in (SELECT isin FROM myfin.equitytransactions where portfolioid="+ portfolioId + ")" +
+					"	order by isin,dtupdated desc;", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					d.Add(new dividend()
+					{
+						companyid=reader["isin"].ToString() ,
+						dt= Convert.ToDateTime(reader["dtupdated"]),
+						value = Convert.ToDouble(reader["dividend"])
+					});
+				}
+			}
+		}
+		public void GetPortFolio(IList<Portfolio> p)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"SELECT * FROM myfin.portfolio;", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					p.Add(new Portfolio()
+					{
+						FolioName = reader["folioname"].ToString(),
+						folioId = Convert.ToInt32(reader["portfolioid"]),
+						userid = Convert.ToInt16(reader["userid"])
+					});
+				}
+			}
+		}
+		public bool AddAssetSnapshot(AssetHistory item)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"REPLACE into myfin.assetsnapshot(portfolioid,qtr,year,assetvalue,dividend,invstmt) 
+										values('" + item.portfolioId + "','" + item.qurarter+ "','" + item.year + "','" + 
+											item.AssetValue +"','"+ item.Dividend + "','" + item.Investment + "' );", _conn);
+				int reader = command.ExecuteNonQuery();
+
+				return true;
+			}
+		}
+
+		 
 	}
 }

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 using System.Reflection;
-
+using Git_Sandbox.Model;
 using HtmlAgilityPack;
 using Microsoft.Office.Interop.Excel;
 using Range = Microsoft.Office.Interop.Excel.Range;
@@ -577,7 +577,7 @@ namespace Equity
 		{
 
 		}
+		
 
-		 
 	}
 }

@@ -17,50 +17,53 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			if(_driver !=null)
 				_driver.Quit();
 		}
-		public void GetDividend(equity e)
+		public void GetDividend(dividend d,equity e)
 		{
 
-			if (e.sourceurl.Contains("mutual-funds"))
+			if (e.divUrl.Contains("mutual-funds"))
+			{
 				return;
-			
-			 
-				dividend item = new dividend();
-				item.companyid = e.ISIN;
-				_driver = new ChromeDriver();
-				_driver.Navigate().GoToUrl(e.sourceurl);
-				Thread.Sleep(150);
-				IList<IWebElement> links = _driver.FindElements(By.TagName("a"));
-				foreach(IWebElement link in links)
+			}
+			if(string.IsNullOrEmpty(e.divUrl))
+			{
+				return;
+			}
+			dividend item = new dividend();
+			item.companyid = e.ISIN;
+			_driver = new ChromeDriver();
+			_driver.Navigate().GoToUrl(e.divUrl);
+			Thread.Sleep(150);
+			IList<IWebElement> links = _driver.FindElements(By.TagName("a"));
+			foreach(IWebElement link in links)
+			{
+			try
+			{
+				string s = link.GetAttribute("href");
+				if (e.divUrl.Contains("moneycontrol"))
 				{
-				try
-				{
-					string s = link.GetAttribute("href");
-					if (e.sourceurl.Contains("moneycontrol"))
+					if (s != null && s.Contains("dividend"))
 					{
-						if (s != null && s.Contains("dividend"))
-						{
-							link.Click();
-							var newTabHandle = _driver.WindowHandles[0];
-							var newTab = _driver.SwitchTo().Window(newTabHandle).PageSource;
-							break;
-						}
-					}
-					else
-					{			
-						if (s != null && s.Contains("corp-actions"))
-						{
-							link.Click();
-							break;
-						}
+						link.Click();
+						var newTabHandle = _driver.WindowHandles[0];
+						var newTab = _driver.SwitchTo().Window(newTabHandle).PageSource;
+						break;
 					}
 				}
-				catch (Exception ex)
-				{
-					string msg = ex.StackTrace;
-					continue;
+				else
+				{			
+					if (s != null && s.Contains("corp-actions"))
+					{
+						link.Click();
+						break;
+					}
 				}
-				}
-		 
+			}
+			catch (Exception ex)
+			{
+				string msg = ex.StackTrace;
+				continue;
+			}
+			}	 
 		 
 				int i = 1;
 				//Past 2 dividend details
@@ -68,18 +71,24 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				{
 					try
 					{
-						if (e.sourceurl.Contains("moneycontrol"))
+						if (e.divUrl.Contains("moneycontrol"))
 						{
 							GetDividendFromMoneyConterol(item, i);
+							i++;
 						}
 						else
 						{
-							GetDividendFromBse(item, i);
-						}
+						GetDividendFromBse(item, i);
+						i++;
+						if (DateTime.UtcNow.Subtract(item.dt).Days>90)
+							continue;
+						
+					}
 						component.getMySqlObj().AddDividendDetails(item);
 						i++;
 					}
 					catch(Exception ex)
+
 					{
 					i++;
 					string msg = ex.StackTrace;

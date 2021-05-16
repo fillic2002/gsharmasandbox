@@ -11,6 +11,7 @@ namespace Git_Sandbox.DailyRunJob
 		static MysqlHelper _mysqlObj;
 		static GenericFunc _gnrObj;
 		static WebScrapper _webObj;
+		static ExcelHelper _excelHelper;
 
 		public static MysqlHelper getMySqlObj()
 		{
@@ -33,6 +34,13 @@ namespace Git_Sandbox.DailyRunJob
 
 			return _webObj;
 		}
-		 
+		public static ExcelHelper getExcelHelperObj()
+		{
+			if (_excelHelper == null)
+				_excelHelper = new ExcelHelper();
+
+			return _excelHelper;
+		}
+
 	}
 }

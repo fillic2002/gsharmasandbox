@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
-using Microsoft.Office.Interop.Excel;
+using DocumentFormat.OpenXml.Packaging;
+//using Microsoft.Office.Interop.Excel;
+using OfficeOpenXml;
 //using Range = Microsoft.Office.Interop.Excel.Range;
 
 namespace Equity
@@ -14,7 +17,7 @@ namespace Equity
 		//private Dictionary<double, string> _companyName = new Dictionary<double, string>();
 		//int startPoint = 3;
 		//int fetchTill = 2900;
-
+		
 		//Worksheet EQUITY_SHEET, ASSET_SHEET;
 		//Workbook wb;
 		//Workbook _assetWorkBook;
@@ -23,8 +26,8 @@ namespace Equity
 		//public Dictionary<double, Dictionary<int, string>> _roceList = new Dictionary<double, Dictionary<int, string>>();
 		//public List<double> _scriptList = new List<double>() { };
 
-		//  string EQUITY_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
-		//  string ASSET_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
+		  string EQUITY_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
+		  //string ASSET_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
 
 
 		//public Dictionary<double, string> CompanyName
@@ -32,15 +35,16 @@ namespace Equity
 		//	get { return _companyName; }
 		//	set { _companyName = value; }
 		//}
-		//public ExcelHelper()
-		//{
-		//	if(ExcelApp ==null)
-		//		ExcelApp = new Application();
-		//	//if(_assetWorkBook !=null)
-		//	_assetWorkBook = ExcelApp.Workbooks.Open(ASSET_FILE_PATH, Missing.Value, false, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value);
-		//}
-
+		public ExcelHelper()
+		{
+			//if(ExcelApp ==null)
+				//ExcelApp = new Application();
+			//if(_assetWorkBook !=null)
+			//_assetWorkBook = ExcelApp.Workbooks.Open(ASSET_FILE_PATH, Missing.Value, false, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value);
 		
+		}
+
+
 
 		///// <summary>
 		///// Get list of equity in _scriptlist
@@ -89,7 +93,7 @@ namespace Equity
 		//}
 		//public void SaveToEquityFile(string sheet)
 		//{
-			
+
 		//	EQUITY_SHEET = (Worksheet)wb.Sheets[sheet];			
 		//	int cell = startPoint;
 		//	foreach (double companyid in _scriptList)
@@ -194,35 +198,103 @@ namespace Equity
 
 		//}
 
-		//public string FindValuationBelow(string companyid)
-		//{
-		//	int cell = startPoint;
-		//	string CompanysValuation=string.Empty;
-		//	EQUITY_SHEET = (Worksheet)wb.Sheets["Revenue"];
-		//	foreach (double item in _scriptList)
-		//	{
-		//		if (item.ToString() == companyid)
-		//		{
-		//			try
-		//			{
-		//				Range valuation = (Range)EQUITY_SHEET.Cells[cell, 7];
-		//				CompanysValuation = valuation.Value2.ToString();
-		//			}
-		//			catch (Exception ex)
-		//			{
-		//				continue;
-		//			}
-		//		}
-		//	}
+		public string getMonth(int mnth)
+		{
+			string month= string.Empty;
+			switch(mnth)
+			{
+				case 1:
+					month= "Jan";
+				break;
 
-		//	return CompanysValuation;
+				case 2:
+					month= "Feb";
+					break;
 
-		//}
-		//public void CloseExcel()
-		//{
-		//	ExcelApp.Quit();
-		//}
+				case 3:
+					month= "Mar";
+					break;
+
+				case 4:
+					month= "Apr";
+					break;
+
+				case 5:
+					month= "May";
+					break;
+
+				case 6:
+					month= "Jun";
+					break;
+				case 7:
+					month= "Jul";
+					break;
+
+				case 8:
+					month= "Aug";
+					break;
+
+				case 9:
+					month= "Sep";
+					break;
+
+				case 10:
+					month= "Oct";
+					break;
+
+				case 11:
+					month= "Nov";
+					break;
+
+				case 12:
+					month= "Dec";
+					break;
+			}
+			return month;
+		}
+
+		public double GetMonthlySharePrice(string companyid, int mnth, int year)
+		{
+			string[] lines = File.ReadAllLines(EQUITY_FILE_PATH);
+			double sharePrice=0;
+			bool companyMatched = false;
+
+			foreach (string line in lines)
+			{
+				string[] item= line.Split(',');
+			
+				if(item[1] == "")
+				{
+					Console.WriteLine(line);
+					if (item[0] == companyid)
+						companyMatched = true;
+				}
+				else
+				{
+					if (companyMatched)
+					{
+						if (item[0] != "Date")
+						{
+							if (item[0].Split('-')[1] == year.ToString().Substring(2) && item[0].Split('-')[0] == getMonth(mnth))
+							{
+								sharePrice = Convert.ToDouble(item[4]);
+								break;
+							}
+						}
+					}
+				}
+			}
+			return sharePrice;
+		}
+
+			//	return CompanysValuation;
+
+			//}
+			//public void CloseExcel()
+			//{
+			//	ExcelApp.Quit();
+			//}
 
 
-	}
+		}
 }
