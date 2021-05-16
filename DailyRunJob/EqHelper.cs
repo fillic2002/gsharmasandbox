@@ -170,7 +170,7 @@ namespace DailyRunEquity
 						if (eqt.TypeofTransaction == 'B')
 						{
 							history.Investment += eqt.price * eqt.qty;
-							history.AssetValue += GetLivePrice(eqt.equity.ISIN,eqt.TransactionDate.Month, eqt.TransactionDate.Year) * eqt.qty;
+							history.AssetValue += GetLivePrice(eqt.equity.ISIN,month, year) * eqt.qty;
 							history.portfolioId = eqt.portfolioId;
 
 
@@ -182,7 +182,7 @@ namespace DailyRunEquity
 						else
 						{
 							history.Investment -= eqt.price * eqt.qty;
-							history.AssetValue -= GetLivePrice(eqt.equity.ISIN, eqt.TransactionDate.Month, eqt.TransactionDate.Year) * eqt.qty;
+							history.AssetValue -= GetLivePrice(eqt.equity.ISIN, month, year) * eqt.qty;
 						}
 					}
 				}
@@ -205,15 +205,18 @@ namespace DailyRunEquity
 							}
 						}
 					}
-					equities[d.companyid] += qty * d.value;
-					dividend += qty * d.value;
+					if (qty > 0)
+					{
+						equities[d.companyid] += qty * d.value;
+						dividend += qty * d.value;
+					}
 
 				}
 				history.Dividend = dividend;
 				//history.qurarter = (DateTime.Now.Month - 1) / 3 + 1;
 				history.qurarter = month;
 				history.year = year;
-
+				Console.WriteLine("Save Record for Portfolio:"+ p.folioId + " For Year: "+ year + " Month:" + month);
 				component.getMySqlObj().AddAssetSnapshot(history);
 			}
 
@@ -221,7 +224,14 @@ namespace DailyRunEquity
 
 		public double GetLivePrice(string ISIN,int month, int year)
 		{
-			return component.getExcelHelperObj().GetMonthlySharePrice(ISIN,month, year);			
+			if (month == DateTime.Now.Month && year == DateTime.Now.Year)
+			{
+				return component.getMySqlObj().GetLatesNAV(ISIN);
+			}
+			else
+			{
+				return component.getExcelHelperObj().GetMonthlySharePrice(ISIN, month, year);
+			}
 		}
 	}
 }

@@ -39,6 +39,20 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 			return true;
 		}
+		public double GetLatesNAV(string ISIN)
+		{
+			double result = 0;
+			
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"SELECT liveprice FROM myfin.equitydetails" +
+									" WHERE ISIN = '" + ISIN + "';", _conn);
+
+				 result = (double)command.ExecuteScalar();
+			}
+			return result;
+		}
 
 		public IList<equity> GetEquityNavUrl()
 		{

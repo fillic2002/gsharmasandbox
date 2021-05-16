@@ -54,8 +54,24 @@ namespace Git_Sandbox
             //obj.AddDividendDetails();
 
             //Update Monthly asset details
+            bool stopY = false;
+            //bool stopM = false;
+            for (int y = 2017; y<= 2021; y++)
+            {
+                if (DateTime.Now.Year == y)
+                    stopY = true;
 
-            obj.UpdateMonthlyAsset(9,2020);
+                for (int m = 1; m <= 12; m++)
+                {
+                    if (stopY == false || (stopY ==true && DateTime.Now.Month >= m))
+                    {
+                        obj.UpdateMonthlyAsset(m, y);
+                    }
+                   
+                }
+                
+            }
+            
 
             //obj.ReadNewExcel();
 

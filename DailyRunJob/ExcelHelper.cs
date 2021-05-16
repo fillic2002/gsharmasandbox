@@ -265,7 +265,7 @@ namespace Equity
 			
 				if(item[1] == "")
 				{
-					Console.WriteLine(line);
+					
 					if (item[0] == companyid)
 						companyMatched = true;
 				}
