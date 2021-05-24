@@ -48,37 +48,22 @@ namespace Git_Sandbox
 
             //Get all the latest NAV for shares
             Eqhelper obj = new Eqhelper();
-            //obj.UpdateShareCurrentPrice();
+           // obj.UpdateShareCurrentPrice();
 
             // Add dividend details that are updated in bse in last 90 days
-            //obj.AddDividendDetails();
+           //obj.AddDividendDetails();
 
             //Update Monthly asset details
-            bool stopY = false;
-            //bool stopM = false;
-            for (int y = 2017; y<= 2021; y++)
-            {
-                if (DateTime.Now.Year == y)
-                    stopY = true;
-
-                for (int m = 1; m <= 12; m++)
-                {
-                    if (stopY == false || (stopY ==true && DateTime.Now.Month >= m))
-                    {
-                        obj.UpdateMonthlyAsset(m, y);
-                    }
-                   
-                }
-                
-            }
+            obj.UpdateAssetHistory();
+             
             
 
             //obj.ReadNewExcel();
 
             Procurement objPro = new Procurement();
             var result = objPro.ShowProcurementInfo();
-            Console.Write("DO YOU SEE ANY PROPERTY?");
-            Console.ReadKey();
+            //Console.Write("DO YOU SEE ANY PROPERTY?");
+            //Console.ReadKey();
         }
     }
 }

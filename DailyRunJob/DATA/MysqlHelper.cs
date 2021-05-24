@@ -98,7 +98,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 		}
 
-		public bool AddDividendDetails(dividend item)
+		public bool ReplaceDividendDetails(dividend item)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
@@ -109,17 +109,19 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				return true;
 			}
 		}
+		 
 
 		public void GetStaleDividendCompanies(IList<dividend> item)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"Select distinct(isin) from myfin.dividend
-										where isin not in(
-										SElect distinct(isin)
-										from myfin.dividend
-										where datediff(curdate() ,dtupdated )<=90);", _conn);
+				//using var command = new MySqlCommand(@"Select distinct(isin) from myfin.dividend
+				//						where isin not in(
+				//						SElect distinct(isin)
+				//						from myfin.dividend
+				//						where datediff(curdate() ,dtupdated )<=90);", _conn);
+				using var command = new MySqlCommand(@"select * from myfin.equitydetails where description is not null and Assettypeid=1;", _conn);
 				using var reader = command.ExecuteReader();
 
 				while (reader.Read())
@@ -159,7 +161,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 		}
 
-		public void GetDividend(IList<dividend> d, int portfolioId)
+		public void GetCompaniesDividendDetails(IList<dividend> d, int portfolioId)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{

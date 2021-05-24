@@ -11,7 +11,21 @@ namespace Git_Sandbox.DailyRunJob.DATA
 	public class WebScrapper : IDisposable
 	{
 		IWebDriver _driver;
-		string _webScrapperUrl = "https://www.nseindia.com/get-quotes/equity?symbol=";
+		ChromeOptions chromeOptions;
+		string _webScrapperUrl= string.Empty;
+
+		public WebScrapper()
+		{
+			_webScrapperUrl = "https://www.nseindia.com/get-quotes/equity?symbol=";
+			chromeOptions = new ChromeOptions();
+			chromeOptions.AddArguments("headless");			 
+			_driver = new ChromeDriver(chromeOptions);
+		}
+		private void GetChromeINstance()
+		{
+			Dispose();
+			_driver = new ChromeDriver(chromeOptions);
+		}
 		public void Dispose()
 		{
 			if(_driver !=null)
@@ -19,7 +33,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		}
 		public void GetDividend(dividend d,equity e)
 		{
-
 			if (e.divUrl.Contains("mutual-funds"))
 			{
 				return;
@@ -30,7 +43,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 			dividend item = new dividend();
 			item.companyid = e.ISIN;
-			_driver = new ChromeDriver();
+			
+			GetChromeINstance();
 			_driver.Navigate().GoToUrl(e.divUrl);
 			Thread.Sleep(150);
 			IList<IWebElement> links = _driver.FindElements(By.TagName("a"));
@@ -63,38 +77,38 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				string msg = ex.StackTrace;
 				continue;
 			}
-			}	 
+		}	 
 		 
-				int i = 1;
-				//Past 2 dividend details
-				while (i <= 2)
+			int i= 1;
+			//Past 2 dividend details
+			while (i <= 5)
+			{
+				try
 				{
-					try
+					if (e.divUrl.Contains("moneycontrol"))
 					{
-						if (e.divUrl.Contains("moneycontrol"))
-						{
-							GetDividendFromMoneyConterol(item, i);
-							i++;
-						}
-						else
-						{
+						GetDividendFromMoneyConterol(item, i);
+						i++;
+					}
+					else
+					{
 						GetDividendFromBse(item, i);
 						i++;
-						if (DateTime.UtcNow.Subtract(item.dt).Days>90)
-							continue;
+						//if (DateTime.UtcNow.Subtract(item.dt).Days>90)
+						//	continue;
 						
 					}
-						component.getMySqlObj().AddDividendDetails(item);
-						i++;
-					}
-					catch(Exception ex)
-
-					{
-					i++;
-					string msg = ex.StackTrace;
-						continue;
-					}
+					Console.WriteLine("Dividend Added:: Companyid:"+ item.companyid +" Date::"+ item.dt +" Value::"+item.value);
+					component.getMySqlObj().ReplaceDividendDetails(item);
+				
 				}
+				catch(Exception ex)
+				{
+				i++;
+				string msg = ex.StackTrace;
+					continue;
+				}
+			}
 			Dispose();
 				//return Convert.ToDouble(dividend);					 
 			
