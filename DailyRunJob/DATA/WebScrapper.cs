@@ -41,8 +41,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				return;
 			}
-			dividend item = new dividend();
-			item.companyid = e.ISIN;
+			dividend div = new dividend();
+			div.companyid = e.ISIN;
 			
 			GetChromeINstance();
 			_driver.Navigate().GoToUrl(e.divUrl);
@@ -87,19 +87,20 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				{
 					if (e.divUrl.Contains("moneycontrol"))
 					{
-						GetDividendFromMoneyConterol(item, i);
+						GetDividendFromMoneyConterol(div, i);
 						i++;
 					}
 					else
 					{
-						GetDividendFromBse(item, i);
+						GetDividendFromBse(div, i);
 						i++;
 						//if (DateTime.UtcNow.Subtract(item.dt).Days>90)
 						//	continue;
 						
 					}
-					Console.WriteLine("Dividend Added:: Companyid:"+ item.companyid +" Date::"+ item.dt +" Value::"+item.value);
-					component.getMySqlObj().ReplaceDividendDetails(item);
+					Console.WriteLine("Dividend Added:: Companyid:"+ div.companyid +" Date::"+ div.dt +" Value::"+div.value);
+					div.lastCrawledDate = DateTime.Now;
+					component.getMySqlObj().ReplaceDividendDetails(div);
 				
 				}
 				catch(Exception ex)

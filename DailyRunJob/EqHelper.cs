@@ -62,7 +62,7 @@ namespace DailyRunEquity
 
 			List<Task<equity>> downloadTasks = downloadTasksQuery.ToList();
 
-			int total = 0;
+			//int total = 0;
 			while (downloadTasks.Any())
 			{
 				Task<equity> finishedTask = await Task.WhenAny(downloadTasks);
@@ -76,48 +76,11 @@ namespace DailyRunEquity
 			}
 			stopwatch.Stop();
 
-			Console.WriteLine($"\nTotal bytes returned:  {total:#,#}");
+			//Console.WriteLine($"\nTotal bytes returned:  {total:#,#}");
 			Console.WriteLine($"Elapsed time:          {stopwatch.Elapsed}\n");
-
-			//Console.WriteLine("Async Call Response Recieved:" + DateTime.Now);
-
-
-			//_excelHelper.SaveToSharesWorksheet("Shares", s1, 3);
-			//Console.WriteLine("Saved for s1:" + DateTime.Now);
-			//_excelHelper.SaveToSharesWorksheet("Shares", s2, 10);
-			//Console.WriteLine("Saved for s2:" + DateTime.Now);
-
-			//_excelHelper.SaveToSharesWorksheet("Shares", s3, 12);
-			//Console.WriteLine("Saved for s3:" + DateTime.Now);
-
-			//_excelHelper.SaveToSharesWorksheet("Shares", s4, 17);
-			//Console.WriteLine("Saved for s4:" + DateTime.Now);
-			//_excelHelper.SaveToSharesWorksheet("Shares", s5, 21);
-		//	Console.WriteLine("Saved for s5:" + DateTime.Now);
-
-			//_excelHelper.SaveToSharesWorksheet("Shares", s13, 27);
-			//Console.WriteLine("Saved for s13:" + DateTime.Now);
-
-			//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s6, 3,((int)CompanyName.GAIL)+60);
-			//Console.WriteLine("Saved for s6:" + DateTime.Now);
-
-			if (ConfigMgr.SAVINGMODE == "DB")
-			{
-				//Console.WriteLine("DB Update::" + component.getMySqlObj().UpdateLatesNAV());
-			}
-			else
-			{
-				//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s7, 3, ((int)CompanyName.MAHANAGAR) + 60);
-				//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s8, 3, ((int)CompanyName.NESCO) + 60);
-				//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s9, 3, ((int)CompanyName.KOVAIMEDICAL) + 60);
-				//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s10, 3, ((int)CompanyName.TATACHEMICAL) + 60);
-				//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s11, 3, ((int)CompanyName.BEL) + 60);
-				//_excelHelper.SaveToFinancialWorksheet("FinancialAnalysis", s12, 3, ((int)CompanyName.GIC) + 60);
-			}
+			 
 			Console.WriteLine("Saved all records:" + DateTime.Now.ToString("hh.mm.ss.ffffff"));
-			//_excelHelper.CloseExcel();
-
-			//Console.ReadKey();
+			 
 		}
 		public void ReadNewExcel()
 		{
@@ -136,12 +99,16 @@ namespace DailyRunEquity
 
 			component.getMySqlObj().GetStaleDividendCompanies(listCompanies);
 
-
 			IList<equity> Listurl = component.getGenericFunctionObj().GetEquityLinks();
+
+			//Check companies whose dividend details not updated in last 30 days
 			foreach(dividend u in listCompanies)
 			{
-				//if(u.companyid== "INE775A01035")
+				component.getMySqlObj().getLastDividendOfCompany(u);
+				if (DateTime.Now.Subtract(u.dt).TotalDays >= 90 && DateTime.Now.Subtract(u.lastCrawledDate).TotalDays >= 30)
+				{
 					component.getWebScrappertObj().GetDividend(u, Listurl.First<equity>(x => x.ISIN == u.companyid));
+				}
 			}			
 		}
 

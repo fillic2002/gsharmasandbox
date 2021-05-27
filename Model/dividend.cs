@@ -9,5 +9,6 @@ namespace Git_Sandbox.Model
 		public DateTime dt { get; set; }
 		public string companyid { get; set; }
 		public double value { get; set; }
+		public DateTime lastCrawledDate { get; set; }
 	}
 }

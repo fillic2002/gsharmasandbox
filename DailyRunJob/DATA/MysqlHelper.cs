@@ -103,7 +103,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"REPLACE into myfin.dividend(isin,dividend,dtupdated) values('"+item.companyid+"','"+item.value+"','"+item.dt.ToString("yyyy-MM-dd") + "');", _conn);
+				using var command = new MySqlCommand(@"REPLACE into myfin.dividend(isin,dividend,dtupdated,lastcrawleddt) values('" + item.companyid+"','"+item.value+"','"+item.dt.ToString("yyyy-MM-dd") + "','" + item.lastCrawledDate.ToString("yyyy-MM-dd") + "');", _conn);
 				int  reader = command.ExecuteNonQuery();
 				 
 				return true;
@@ -215,6 +215,23 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 		}
 
-		 
+		public void getLastDividendOfCompany(dividend d)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"SELECT * FROM myfin.dividend where isin='"+d.companyid+"' order by dtupdated desc limit 1;", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					d.dt = Convert.ToDateTime(reader["dtupdated"]);
+					d.lastCrawledDate = Convert.ToDateTime(reader["lastcrawleddt"]);					
+				}
+			}
+		}
+
+
+
 	}
 }
