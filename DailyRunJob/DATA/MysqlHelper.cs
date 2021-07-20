@@ -139,7 +139,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"SELECT et.*,ed.liveprice,ed.assettypeid FROM myfin.equitytransactions et
+				using var command = new MySqlCommand(@"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name FROM myfin.equitytransactions et
 							Join myfin.equitydetails ed
 							ON ed.isin=et.isin
 							where portfolioid=" + portfolioId + ";", _conn);
@@ -149,14 +149,22 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				{
 					p.Add(new EquityTransaction()
 					{
-						equity= new equity(){ISIN = reader["isin"].ToString(), LivePrice= Convert.ToDouble(reader["liveprice"]),assetType= (AssetType)Convert.ToInt32(reader["assettypeid"]) },						
+						equity = new equity()
+						{
+							ISIN = reader["isin"].ToString(),
+							LivePrice = Convert.ToDouble(reader["liveprice"]),
+							assetType = (AssetType)Convert.ToInt32(reader["assettypeid"]),
+							Companyname = reader["name"].ToString()
+
+						},
 						price = Convert.ToDouble(reader["price"]),
 						portfolioId = Convert.ToInt16(reader["portfolioid"]),
-						TransactionDate= Convert.ToDateTime(reader["TransactionDate"]),
-						TypeofTransaction =Convert.ToChar(reader["action"]),
-						qty = Convert.ToInt32(reader["qty"]),					
+						TransactionDate = Convert.ToDateTime(reader["TransactionDate"]),
+						TypeofTransaction = Convert.ToChar(reader["action"]),
+						qty = Convert.ToInt32(reader["qty"]),
 
-					});
+
+					}); ;
 				}
 			}
 		}
@@ -206,9 +214,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"REPLACE into myfin.assetsnapshot(portfolioid,qtr,year,assetvalue,dividend,invstmt) 
+				using var command = new MySqlCommand(@"REPLACE into myfin.assetsnapshot(portfolioid,qtr,year,assetvalue,dividend,invstmt,assettype) 
 										values('" + item.portfolioId + "','" + item.qurarter+ "','" + item.year + "','" + 
-											item.AssetValue +"','"+ item.Dividend + "','" + item.Investment + "' );", _conn);
+											item.AssetValue +"','"+ item.Dividend + "','" + item.Investment + "','"+(int)item.assetType+"' );", _conn);
 				int reader = command.ExecuteNonQuery();
 
 				return true;
@@ -232,6 +240,35 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		}
 
 
+		public bool UpdateEquityMonthlyPrice(equityHistory equityItem)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"REPLACE INTO myfin.equitymonthlyprice (id, month,year,price,assetType)
+				values('" + equityItem.equityid+ "'," + equityItem.month+ "," + equityItem.year+ "," + equityItem.price+","+equityItem.assetType+");", _conn);
+				using var reader = command.ExecuteReader();
+
+				return true;
+			}
+		}
+ 
+		public double GetHistoricalSharePrice(string id,int month, int year)
+			{
+				using (MySqlConnection _conn = new MySqlConnection(connString))
+				{
+					_conn.Open();
+					using var command = new MySqlCommand(@"SELECT * FROM myfin.equitymonthlyprice where id='" + id + "' AND year="+year+" AND month=" +
+						month+";", _conn);
+					using var reader = command.ExecuteReader();
+
+					while (reader.Read())
+					{
+						return Convert.ToDouble(reader["price"]);						
+					}
+				return 0;
+				}
+			}
 
 	}
 }

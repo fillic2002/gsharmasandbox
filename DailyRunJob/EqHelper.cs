@@ -16,6 +16,8 @@ namespace DailyRunEquity
 	{
 		private GenericFunc _htmlHelper;
 		private Dictionary<int, double> _currentNav;
+		private string _mfHistoricalNav ="https://www.amfiindia.com/net-asset-value/nav-history";
+		IList<equityHistory> _eqHistory;
 		//ExcelHelper _excelHelper;
 		//excelhelpernew _excelHelper;
 
@@ -48,6 +50,7 @@ namespace DailyRunEquity
 			_htmlHelper = new GenericFunc();
 		 
 			equity = component.getMySqlObj().GetEquityNavUrl();
+			_eqHistory = new List<equityHistory>();
 		}
 		/// <summary>
 		/// This function is going to get live NAV for the shares and update in the db table
@@ -76,7 +79,7 @@ namespace DailyRunEquity
 			}
 			stopwatch.Stop();
 
-			//Console.WriteLine($"\nTotal bytes returned:  {total:#,#}");
+			
 			Console.WriteLine($"Elapsed time:          {stopwatch.Elapsed}\n");
 			 
 			Console.WriteLine("Saved all records:" + DateTime.Now.ToString("hh.mm.ss.ffffff"));
@@ -104,6 +107,7 @@ namespace DailyRunEquity
 			//Check companies whose dividend details not updated in last 30 days
 			foreach(dividend u in listCompanies)
 			{
+			
 				component.getMySqlObj().getLastDividendOfCompany(u);
 				if (DateTime.Now.Subtract(u.dt).TotalDays >= 90 && DateTime.Now.Subtract(u.lastCrawledDate).TotalDays >= 30)
 				{
@@ -120,14 +124,14 @@ namespace DailyRunEquity
 
 			foreach (Portfolio p in folioDetail)
 			{
-				IList<dividend> dividendDetails = new List<dividend>();
+			IList<dividend> dividendDetails = new List<dividend>();
 
 				IList<EquityTransaction> transaction = new List<EquityTransaction>();
 				component.getMySqlObj().GetTransactions(transaction, p.folioId);
 				component.getMySqlObj().GetCompaniesDividendDetails(dividendDetails, p.folioId);
 
 				bool stopY = false;		
-				for (int y = 2017; y <= 2021; y++)
+				for (int y = 2021; y <= 2021; y++)
 				{
 					if (DateTime.Now.Year == y)
 						stopY = true;
@@ -136,14 +140,59 @@ namespace DailyRunEquity
 					{
 						if (stopY == false || (stopY == true && DateTime.Now.Month >= m))
 						{							 
-							UpdateMonthlyAsset(m, y, p, transaction,dividendDetails);
+							UpdateMonthlyShareCashFlow(m, y, p, transaction,dividendDetails);
+							//UpdateMonthlyMFCashFlow(m, y, p, transaction, AssetType.EquityMF);
+							//UpdateMonthlyMFCashFlow(m, y, p, transaction, AssetType.DebtMF);
 						}
 					}
 				}				
 			}
 		}
+		public void UpdateMonthlyMFCashFlow(int month, int year, Portfolio p, IList<EquityTransaction> t, AssetType astType)
+		{
 
-		public void UpdateMonthlyAsset(int month, int year, Portfolio p, IList<EquityTransaction> t, IList<dividend> d)
+			AssetHistory history;
+			Dictionary<string, double> equities = new Dictionary<string, double>();
+			IList<dividend> dividendDetails = new List<dividend>();
+			IList<Portfolio> folioDetail = new List<Portfolio>(); history = new AssetHistory();
+
+			foreach (EquityTransaction eqt in t)
+			{
+				if (eqt.equity.assetType == astType && ((eqt.TransactionDate.Year == year && eqt.TransactionDate.Month <= month) ||
+						eqt.TransactionDate.Year < year))
+				{
+					if (eqt.TypeofTransaction == 'B')
+					{
+						history.Investment += eqt.price * eqt.qty;
+						history.AssetValue += GetMonthlyPrice(eqt.equity.ISIN, month, year,eqt.equity.Companyname,astType) * eqt.qty;
+				
+						if (!equities.ContainsKey(eqt.equity.ISIN))
+						{
+							equities.Add(eqt.equity.ISIN, 0);
+						}
+					}
+					else
+					{
+						history.Investment -= eqt.price * eqt.qty;
+						history.AssetValue -= GetMonthlyPrice(eqt.equity.ISIN, month, year, eqt.equity.Companyname,astType) * eqt.qty;
+					}
+				}
+			}
+
+			history.portfolioId = p.folioId;
+			history.assetType = (int)astType;
+			history.Dividend = 0;			
+			history.qurarter = month;
+			history.year = year;
+			if (history.Investment != 0)
+			{
+				Console.WriteLine("Save Record for Portfolio:" + p.folioId + " For Year: " + year + " Month:" + month);
+				component.getMySqlObj().AddAssetSnapshot(history);
+			}
+
+		}
+
+		public void UpdateMonthlyShareCashFlow(int month, int year, Portfolio p, IList<EquityTransaction> t, IList<dividend> d)
 		{
 		 
 			AssetHistory history;
@@ -158,9 +207,9 @@ namespace DailyRunEquity
 					if (eqt.TypeofTransaction == 'B')
 					{
 						history.Investment += eqt.price * eqt.qty;
-						history.AssetValue += GetLivePrice(eqt.equity.ISIN,month, year) * eqt.qty;
+						history.AssetValue += GetMonthlyPrice(eqt.equity.ISIN,month, year,eqt.equity.Companyname, eqt.equity.assetType) * eqt.qty;
 						history.portfolioId = eqt.portfolioId;
-
+						history.assetType = (int)AssetType.Shares; 
 
 						if (!equities.ContainsKey(eqt.equity.ISIN))
 						{
@@ -170,7 +219,7 @@ namespace DailyRunEquity
 					else
 					{
 						history.Investment -= eqt.price * eqt.qty;
-						history.AssetValue -= GetLivePrice(eqt.equity.ISIN, month, year) * eqt.qty;
+						history.AssetValue -= GetMonthlyPrice(eqt.equity.ISIN, month, year,eqt.equity.Companyname, eqt.equity.assetType) * eqt.qty;
 					}
 				}
 			}
@@ -196,32 +245,90 @@ namespace DailyRunEquity
 				if (qty > 0)
 				{
 					equities[div.companyid] += qty * div.value;
-					dividend += qty * div.value;
-					//if(p.folioId==2)
-					//	Console.WriteLine("EQUITY:"+div.companyid +" Dividend:"+ equities[div.companyid]);
+					dividend += qty * div.value;					
 				}
 			}
 			
 
 			history.Dividend = dividend;
-			//history.qurarter = (DateTime.Now.Month - 1) / 3 + 1;
+			history.assetType = (int)AssetType.Shares;
 			history.qurarter = month;
 			history.year = year;
-			Console.WriteLine("Save Record for Portfolio:"+ p.folioId + " For Year: "+ year + " Month:" + month);
-			component.getMySqlObj().AddAssetSnapshot(history);			 
+			if (history.AssetValue != 0)
+			{
+				Console.WriteLine("Save Record for Portfolio:" + p.folioId + " For Year: " + year + " Month:" + month);
+				component.getMySqlObj().AddAssetSnapshot(history);
+			}
 
 		}
 
-		public double GetLivePrice(string ISIN,int month, int year)
+		public double GetMonthlyPrice(string ISIN,int month, int year,string companyname, AssetType assetType)
 		{
+			double itemPrice = 0;
+			Console.ForegroundColor = ConsoleColor.Green;
+			Console.WriteLine("Getting Monthly price for:" + companyname + " for the month of :" + month + "-" + year);
+			Console.ForegroundColor = ConsoleColor.White;
+
+			//Search from nav table
 			if (month == DateTime.Now.Month && year == DateTime.Now.Year)
 			{
 				return component.getMySqlObj().GetLatesNAV(ISIN);
+			}
+			else if(year >=2021 && month>=1)
+			{
+				if(_eqHistory.Count>0)
+				{					 
+					var item=_eqHistory.FirstOrDefault(y => y.equityid == ISIN && y.month==month && y.year==year);
+					if(item!=null && item.price >0)
+					{
+						itemPrice= item.price;
+					}
+					else
+					{
+						itemPrice=updateequityprice(  ISIN,   month,   year,   assetType,   companyname);
+					}
+				}
+				else
+				{
+					itemPrice=updateequityprice(ISIN, month, year, assetType, companyname);					 
+				}
+				 
+				return itemPrice;
 			}
 			else
 			{
 				return component.getExcelHelperObj().GetMonthlySharePrice(ISIN, month, year);
 			}
+		}
+
+		private double updateequityprice(string ISIN,int month,int year,AssetType assetType,string companyname)
+		{
+			double itemPrice;
+			IDictionary<int, double> montlyPrice = new Dictionary<int, double>();
+
+			itemPrice = component.getMySqlObj().GetHistoricalSharePrice(ISIN,month,year);
+			if (itemPrice == 0)
+			{				 
+				montlyPrice = component.getWebScrappertObj().GetHistoricalAssetPrice(companyname, month, year, assetType);
+			}
+			foreach(int key in montlyPrice.Keys)
+			{
+				equityHistory eq = new equityHistory()
+				{
+					month = key,
+					year = year,
+					price = montlyPrice[key],
+					equityid = ISIN,
+					assetType = Convert.ToInt32(assetType)
+				};
+				if(key==month)
+				{
+					itemPrice= montlyPrice[key];
+				}
+				_eqHistory.Add(eq);
+				component.getMySqlObj().UpdateEquityMonthlyPrice(eq);
+			}
+			return itemPrice;
 		}
 	}
 }

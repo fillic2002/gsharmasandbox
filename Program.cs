@@ -14,7 +14,7 @@ namespace Git_Sandbox
             Eqhelper obj = new Eqhelper();
 
             //Update Shares latest NAV - Daily
-            obj.UpdateShareCurrentPrice();
+           obj.UpdateShareCurrentPrice();
 
            // Add new dividend details that are updated in bse in last 90 days
            obj.AddDividendDetails();

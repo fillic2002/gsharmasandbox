@@ -13,6 +13,7 @@ namespace Git_Sandbox.Model
 		public int qurarter { get; set; }
 		public int year { get; set; }
 		public int qty { get; set; }
+		public int assetType { get; set; }
 		
 	}
 	
