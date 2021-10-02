@@ -13,7 +13,6 @@ namespace Git_Sandbox.Model
 		public string ISIN { get; set; }
 		 
 		public double LivePrice;
-
 		public string sourceurl { get; set; }
 		public string divUrl { get; set; }
  
@@ -25,10 +24,10 @@ namespace Git_Sandbox.Model
 		PF,
 		PPF,
 		DebtMF,
-		Bank,
-		Plot,
-		Flat,
-		Gold
+		Bank=6,
+		Plot=7,
+		Flat=8,
+		Gold=12
 	}
 	
 }

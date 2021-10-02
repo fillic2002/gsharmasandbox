@@ -195,10 +195,12 @@ namespace Equity
 				if (eq.assetType == AssetType.Shares)
 				{
 					result = doc.DocumentNode.SelectNodes("//*[@id='bsecp']")[0].InnerText;
-					Console.WriteLine("Price for id:" +eq.ISIN +" Is:" + result.ToString());
+					Console.WriteLine("Price for id:" + eq.ISIN + " Is:" + result.ToString());
 				}
 				else
+				{
 					result = doc.DocumentNode.SelectNodes("//span[@class='amt']")[0].InnerText.Split(' ')[1];
+				}
 				return Convert.ToDouble(result);
 			}
 			catch(Exception ex)

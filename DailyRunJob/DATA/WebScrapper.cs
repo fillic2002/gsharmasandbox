@@ -125,13 +125,17 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			if (assetType== AssetType.Shares)
 			{
 				_webScrapperUrl= "https://www.moneycontrol.com/stocks/histstock.php?classic=true";
+				return GetHistoricalSharePrice(name, month, year);
 			}
-			//else
-			//{
-			//	_webScrapperUrl = "https://www.etmoney.com/mutual-funds/filter/historical-mutual-fund-nav";
-			//	return GetHistoricalMFPrice(name, month, year);
-			//}
-			return GetHistoricalSharePrice(name, month, year);
+			else
+			{
+				_webScrapperUrl = "https://www.etmoney.com/mutual-funds/filter/historical-mutual-fund-nav";
+				//GetHistoricalMFPrice(name, month, year);
+				Dictionary<int,double> price= new Dictionary<int, double>();
+				price.Add(month, GetHistoricalMFPrice(name, month, year));
+				return price;
+			}
+			//return GetHistoricalSharePrice(name, month, year);
 		}
 
 
@@ -172,11 +176,29 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				Thread.Sleep(3500);
 				_driver.FindElement(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[5]/div[2]/div[6]/table/tbody/tr/td[3]/form/div[4]/select[1]/option[12]")).Click();
 				Thread.Sleep(3500);
-				IList<IWebElement> button = _driver.FindElements(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[5]/div[2]/div[6]/table/tbody/tr/td[3]/form/div[4]/input[1]"));
+				IWebElement selYear= _driver.FindElement(By.XPath("//select[@name='mth_to_yr']"));
+				SelectElement el = new SelectElement(selYear);
+				el.SelectByValue(year.ToString());
+				Thread.Sleep(3000);
+				IWebElement selFrmYear = _driver.FindElement(By.XPath("//select[@name='mth_frm_yr']"));
+				SelectElement elFrm = new SelectElement(selFrmYear);
+				elFrm.SelectByValue(year.ToString());
+				Thread.Sleep(3000);
 
+				IList <IWebElement> button = _driver.FindElements(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[5]/div[2]/div[6]/table/tbody/tr/td[3]/form/div[4]/input[1]"));
+				// Need to add month and year here
 				button[0].Click();
 				//TODO- Need to change the logic to check month name here
-				int row = 9 - month;
+				int row;
+				if (year < DateTime.Now.Year)
+				{
+					row = month;
+				}
+				else
+				{
+					row = DateTime.Now.Month - month;
+				}
+				 
 				int items = _driver.FindElements(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[4]/div[4]/table/tbody/tr")).Count;
 				for(int i=2; i<= items;i++)
 				{
@@ -184,7 +206,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					string price = _driver.FindElement(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[4]/div[4]/table/tbody/tr[" + i.ToString() + "]/td[5]")).Text;
 					GetYearlyPrice(m, price);
 				} 
-				var result = _driver.FindElement(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[4]/div[4]/table/tbody/tr["+ row.ToString() +"]/td[5]")).Text;
+				//var result = _driver.FindElement(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[4]/div[4]/table/tbody/tr["+ row.ToString() +"]/td[5]")).Text;
 							
 				return yearlyPrice;
 			}
@@ -198,8 +220,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		{
 			try
 			{
-				int length = 3;
-				
+				int length = 10;
+				if (name == null)
+					return 0;
 				Thread.Sleep(1500);
 				GetChromeINstance();
 				_driver.Navigate().GoToUrl(_webScrapperUrl);
@@ -302,7 +325,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				yearlyPrice.Add(4, Convert.ToDouble(price));
 			else if (month.Contains("May"))
 				yearlyPrice.Add(5, Convert.ToDouble(price));
-			else if (month.Contains("Jun"))
+			else if (month.Contains("June"))
 				yearlyPrice.Add(6, Convert.ToDouble(price));
 			else if (month.Contains("July"))
 				yearlyPrice.Add(7, Convert.ToDouble(price));
@@ -310,11 +333,11 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				yearlyPrice.Add(8, Convert.ToDouble(price));
 			else if (month.Contains("Sep"))
 				yearlyPrice.Add(9, Convert.ToDouble(price));
-			else if (month.Contains("oct"))
+			else if (month.Contains("Oct"))
 				yearlyPrice.Add(10, Convert.ToDouble(price));
-			else if (month.Contains("nov"))
+			else if (month.Contains("Nov"))
 				yearlyPrice.Add(11, Convert.ToDouble(price));
-			else if (month.Contains("dec"))
+			else if (month.Contains("Dec"))
 				yearlyPrice.Add(12, Convert.ToDouble(price));
 		}
 	}

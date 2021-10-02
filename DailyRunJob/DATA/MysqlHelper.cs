@@ -168,6 +168,99 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 		}
+		public void GetPropertyTransactions(IList<propertyTransaction> p, int portfolioId)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"SELECT * FROM myfin.propertytransaction 
+							where portfolioid=" + portfolioId + ";", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					p.Add(new propertyTransaction()
+					{					 
+						astType = (AssetType)Convert.ToInt32(reader["assettype"]),					 
+						astvalue = Convert.ToDouble(reader["currentvalue"]),
+						portfolioId = Convert.ToInt16(reader["portfolioid"]),
+						TransactionDate = Convert.ToDateTime(reader["dtofpurchase"]),
+						investment = Convert.ToDouble(reader["purchaseprc"]),
+						TypeofTransaction = Convert.ToChar(reader["tranmode"])
+					}); ;
+				}
+			}
+		}
+
+		public void GetPFSnapshot(IList<AssetHistory> h, int portfolioId)
+		{
+			//using (MySqlConnection _conn = new MySqlConnection(connString))
+			//{
+			//	_conn.Open();
+			//	using var command = new MySqlCommand(@"SELECT myfin.assetsnapshot(portfolioid,year,qtr,assettype,assetvalue,dividend,invstmt)
+			//				values( select " + portfolioId + ",YEAR(dateoftransaction),MONTH(dateoftransaction),useracctid ,amt,0,0 from myfin.bankdetail;", _conn);
+			//	using var reader = command.ExecuteReader();
+
+			//	while (reader.Read())
+			//	{
+			//		p.Add(new propertyTransaction()
+			//		{
+			//			astType = (AssetType)Convert.ToInt32(reader["assettype"]),
+			//			astvalue = Convert.ToDouble(reader["currentvalue"]),
+			//			portfolioId = Convert.ToInt16(reader["portfolioid"]),
+			//			TransactionDate = Convert.ToDateTime(reader["dtofpurchase"]),
+			//			investment = Convert.ToDouble(reader["purchaseprc"]),
+			//			TypeofTransaction = Convert.ToChar(reader["tranmode"])
+			//		}); ;
+			//	}
+			//}
+		}
+		public void GetCompanyDetails(equity e)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"select * from myfin.equitydetails where isin='"+e.ISIN+"';", _conn);
+
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					e.Companyname = reader["Name"].ToString();
+					e.LivePrice = Convert.ToDouble(reader["liveprice"]);
+				}
+			}
+		}
+		public bool UpdatePFSnapshot(int m,int y,int portfolioId)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,qtr,assettype,assetvalue,dividend,invstmt)
+							 select " + portfolioId + ","+y+","+m+",accttype ,amt,0,0 from myfin.bankdetail where useracctid in(16,17) and folioid="+portfolioId+";", _conn);
+				 
+				int result = command.ExecuteNonQuery();
+
+				return true;
+
+			}
+		}
+		public bool UpdateBankSnapshot(int m, int y, int portfolioId)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,qtr,assettype,assetvalue,dividend,invstmt)
+							 select " + portfolioId + "," + y + "," + m + ",6, sum(amt),0,0 from myfin.bankdetail " +
+							 "where folioid="+portfolioId+" and accttype=6  group by userid;", _conn);
+
+				int result = command.ExecuteNonQuery();
+
+				return true;
+
+			}
+		}
+
 
 		public void GetCompaniesDividendDetails(IList<dividend> d, int portfolioId)
 		{
@@ -215,12 +308,34 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE into myfin.assetsnapshot(portfolioid,qtr,year,assetvalue,dividend,invstmt,assettype) 
-										values('" + item.portfolioId + "','" + item.qurarter+ "','" + item.year + "','" + 
+										values('" + item.portfolioId + "','" + item.month+ "','" + item.year + "','" + 
 											item.AssetValue +"','"+ item.Dividend + "','" + item.Investment + "','"+(int)item.assetType+"' );", _conn);
 				int reader = command.ExecuteNonQuery();
 
 				return true;
 			}
+		}
+
+		public void GetAssetSnapshot(AssetHistory hstry)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"Select portfolioid,qtr,year,assetvalue,dividend,invstmt,assettype 
+										from myfin.assetsnapshot where portfolioid=" + hstry.portfolioId + " AND qtr=" + hstry.month + 
+										" AND year=" + hstry.year + " AND assettype=" + (int)hstry.assetType + ";", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					hstry.AssetValue = Convert.ToDouble(reader["assetvalue"]);
+					hstry.Dividend = Convert.ToDouble(reader["dividend"]);
+					hstry.Investment = Convert.ToDouble(reader["invstmt"]);
+				
+				}
+
+			}
+
 		}
 
 		public void getLastDividendOfCompany(dividend d)
@@ -238,7 +353,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 		}
-
 
 		public bool UpdateEquityMonthlyPrice(equityHistory equityItem)
 		{

@@ -10,10 +10,10 @@ namespace Git_Sandbox.Model
 		public double AssetValue{ get; set; }				
 		public double Dividend{ get; set; }
 		public double Investment{ get; set; }
-		public int qurarter { get; set; }
+		public int month { get; set; }
 		public int year { get; set; }
 		public int qty { get; set; }
-		public int assetType { get; set; }
+		public AssetType assetType { get; set; }
 		
 	}
 	
