@@ -9,26 +9,28 @@ namespace Git_Sandbox
     {
         public static void Main(string[] args)
         {
-             
-          
-            Eqhelper obj = new Eqhelper();
+            try
+            {
+                Eqhelper obj = new Eqhelper();
+                WebHelper _webHelper = new WebHelper();
 
-            //Update Shares latest NAV - Daily
-           obj.UpdateShareCurrentPrice();
+                //Update Shares latest NAV -Daily
+                obj.UpdateShareCurrentPrice();		
 
-           // Add new dividend details that are updated in bse in last 90 days
-           obj.AddDividendDetails();
+                //Add new dividend details that are updated in bse in last 90 days
+                obj.AddDividendDetails();
 
-            //Update Monthly asset details
-            obj.UpdateAssetHistory();          
-            
+                //Update Monthly asset details
+                obj.UpdateAssetHistory();
 
-            //obj.ReadNewExcel();
+                _webHelper.GetProcurementDetails();
 
-            //Procurement objPro = new Procurement();
-            //var result = objPro.ShowProcurementInfo();
-            //Console.Write("DO YOU SEE ANY PROPERTY?");
-            //Console.ReadKey();
-        }
+                Console.ReadKey();
+            }
+            catch(Exception ex)
+			{
+
+			}
+         }
     }
 }

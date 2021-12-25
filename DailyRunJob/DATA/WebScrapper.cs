@@ -6,6 +6,10 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using Git_Sandbox.Model;
 using OpenQA.Selenium.Support.UI;
+using System.IO;
+using CsvHelper;
+using CsvHelper.Configuration;
+using System.Globalization;
 
 namespace Git_Sandbox.DailyRunJob.DATA
 {
@@ -18,8 +22,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		
 		public WebScrapper()
 		{
-			//_webScrapperUrl = "https://www.nseindia.com/get-quotes/equity?symbol=";
-			
 			chromeOptions = new ChromeOptions();
 			//chromeOptions.AddArguments("headless");			 
 			_driver = new ChromeDriver(chromeOptions);
@@ -81,10 +83,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				string msg = ex.StackTrace;
 				continue;
 			}
-		}	 
-		 
+		}
+			Thread.Sleep(3000);
 			int i= 1;
 			//Past 2 dividend details
+			DateTime previoudDivDate=DateTime.Now;
+			double previousDivValue=0;
 			while (i <= 5)
 			{
 				try
@@ -103,11 +107,18 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						
 					}
 					Console.WriteLine("Dividend Added:: Companyid:"+ div.companyid +" Date::"+ div.dt +" Value::"+div.value);
+ 					if(previoudDivDate == div.dt && previousDivValue != div.value)
+					{
+						div.value += previousDivValue;
+					}
 					div.lastCrawledDate = DateTime.Now;
 					component.getMySqlObj().ReplaceDividendDetails(div);
-				
+					previoudDivDate = div.dt;
+					previousDivValue = div.value;
+
+
 				}
-				catch(Exception ex)
+				catch (Exception ex)
 				{
 				i++;
 				string msg = ex.StackTrace;
@@ -129,16 +140,105 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 			else
 			{
-				_webScrapperUrl = "https://www.etmoney.com/mutual-funds/filter/historical-mutual-fund-nav";
+				_webScrapperUrl = "https://www.amfiindia.com/net-asset-value/nav-history";
 				//GetHistoricalMFPrice(name, month, year);
 				Dictionary<int,double> price= new Dictionary<int, double>();
-				price.Add(month, GetHistoricalMFPrice(name, month, year));
+				// This is a webscrapper
+				//price.Add(month, GetHistoricalMFPrice(name, month, year));
+				//This is to read from a file
+				GetHistoricalMFPrice(assetType);
 				return price;
 			}
 			//return GetHistoricalSharePrice(name, month, year);
 		}
+		CsvConfiguration csvConfig = new CsvConfiguration(CultureInfo.CurrentCulture)
+		{
+			HasHeaderRecord = false
+		};
 
+		private void GetHistoricalMFPrice(AssetType assetType)
+		{
+			try
+			{
+				using var streamReader = File.OpenText("..\\..\\..\\AxisLongTerm.csv");
+				using var csvReader = new CsvReader(streamReader, csvConfig);
 
+				string value;
+
+				while (csvReader.Read())
+				{
+					int month= 0;
+					int year = 0;
+					for (int i = 0; csvReader.TryGetField<string>(i, out value); i++)
+					{
+						
+						switch(i)
+						{
+							case 0:
+								if (value.Contains("Date"))
+									break;
+								if (value.Contains("January"))
+									month = 1;
+								if (value.Contains("February"))
+									month = 2;
+								if (value.Contains("March"))
+									month = 3;
+								if (value.Contains("April"))
+									month = 4;
+								if (value.Contains("May"))
+									month = 5;
+								if (value.Contains("June"))
+									month = 6;
+								if (value.Contains("July"))
+									month = 7;
+								if (value.Contains("August"))
+									month = 8;
+								if (value.Contains("September"))
+									month = 9;
+								if (value.Contains("October"))
+									month = 10;
+								if (value.Contains("November"))
+									month = 11;
+								if (value.Contains("December"))
+									month = 12;
+								if (value.Contains("2018"))
+									year = 2018;
+								if (value.Contains("2017"))
+									year = 2017;
+								if (value.Contains("2019"))
+									year = 2019;
+								if (value.Contains("2020"))
+									year = 2020;
+								if (value.Contains("2021"))
+									year = 2021;
+								if (value.Contains("2016"))
+									year = 2016;
+								if (value.Contains("2015"))
+									year = 2015;
+								break;
+							case 1:
+								break;
+							case 2:
+								component.getMySqlObj().UpdateEquityMonthlyPrice(new equityHistory()
+								{
+									equityid = "4",
+									month = month,
+									price = Convert.ToDouble(value),
+									year = year,
+									assetType = Convert.ToInt32(AssetType.EquityMF)
+								});
+								break;
+						}						
+					}
+
+					Console.WriteLine();
+				}
+			}
+			catch(Exception ex)
+			{
+				string s = ex.Message;
+			}
+		}
 		private IDictionary<int,double> GetHistoricalSharePrice(string name, int month, int year)
 		{			
 			try
@@ -228,8 +328,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				_driver.Navigate().GoToUrl(_webScrapperUrl);
 
 				Thread.Sleep(1500);
-				IList<IWebElement> option = _driver.FindElements(By.XPath("//*[@id='nav_page_link']/li[2]/label"));
-				option[0].Click();
+				IList<IWebElement> option = _driver.FindElements(By.XPath("//form[@id='navhistory']"));
+				IList<IWebElement> tableRow = option[0].FindElements(By.TagName("input"));
+				tableRow[3].Click();
+
+				
+				//option[2].Click();
 				string sub = name.Substring(0, length);
 				IWebElement input = _driver.FindElement(By.XPath("//*[@id='mfSearchInput']"));
 				input.SendKeys(sub);
@@ -270,8 +374,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				monthStart.SendKeys(month.ToString());
 				IWebElement yrStart = _driver.FindElement(By.XPath("//*[@id='fromDate']/div/input[3]"));
 				yrStart.SendKeys(year.ToString());
-				 
-				wait.Until(ExpectedConditions.VisibilityOfAllElementsLocatedBy(By.XPath("//*[@id='toDate']/div/input[1]")));
+
+				//wait.Until(ExpectedConditions.VisibilityOfAllElementsLocatedBy(By.XPath("//*[@id='toDate']/div/input[1]")));
+				wait.Until(x => x.FindElement(By.XPath("//*[@id='toDate']/div/input[1]")));
 				IWebElement today = _driver.FindElement(By.XPath("//*[@id='toDate']/div/input[1]"));
 				today.SendKeys("30");
 				IWebElement toMonth = _driver.FindElement(By.XPath("//*[@id='toDate']/div/input[2]"));

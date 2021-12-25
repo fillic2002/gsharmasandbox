@@ -12,7 +12,15 @@ namespace Git_Sandbox.DailyRunJob
 		static GenericFunc _gnrObj;
 		static WebScrapper _webObj;
 		static ExcelHelper _excelHelper;
+		static Procurement _eprocObj;
 
+		public static Procurement getEprocObj()
+		{
+			if (_eprocObj == null)
+				_eprocObj = new Procurement();
+
+			return _eprocObj;
+		}
 		public static MysqlHelper getMySqlObj()
 		{
 			if (_mysqlObj == null)

@@ -3,12 +3,13 @@ using System;
 using System.Collections.Generic;
 
 using System.Reflection;
+using Git_Sandbox.DailyRunJob;
 using Git_Sandbox.Model;
 using HtmlAgilityPack;
 using Microsoft.Office.Interop.Excel;
 using Range = Microsoft.Office.Interop.Excel.Range;
 
-namespace Equity
+namespace DailyRunEquity
 {
 	public class WebHelper
 	{
@@ -39,18 +40,18 @@ namespace Equity
 		public List<double> _currentValues = new List<double>();
 		//Master list will contain key as companycode and dictionary as individual cell values
 		public Dictionary<double, Dictionary<int, string>> _masterScriptList = new Dictionary<double, Dictionary<int, string>>();
-		
+
 		public string Script;
 		private SortedDictionary<double, string> _companyName = new SortedDictionary<double, string>();
-		int startPoint=1500;
+		int startPoint = 1500;
 		int fetchTill = 2500;
-		
+
 		//Excel related var
-		Microsoft.Office.Interop.Excel.Application ExcelApp = new Microsoft.Office.Interop.Excel.Application();
+		//Microsoft.Office.Interop.Excel.Application ExcelApp = new Microsoft.Office.Interop.Excel.Application();
 		//ExcelApp.Visible = true;
-		Microsoft.Office.Interop.Excel.Workbook wb;
-		Microsoft.Office.Interop.Excel.Worksheet sh;
-		Microsoft.Office.Interop.Excel.Worksheet _boughtByBulls;
+		//Microsoft.Office.Interop.Excel.Workbook wb;
+		//Microsoft.Office.Interop.Excel.Worksheet sh;
+		//Microsoft.Office.Interop.Excel.Worksheet _boughtByBulls;
 
 		public SortedDictionary<double,string> CompanyName
 		{
@@ -60,12 +61,12 @@ namespace Equity
 
 		public WebHelper()
 		{
-			string filePath = @"C:\d\Personal\Doc\Equity.xlsx";
-			Microsoft.Office.Interop.Excel.Application ExcelApp = new Microsoft.Office.Interop.Excel.Application();
+			//string filePath = @"C:\d\Personal\Doc\Equity.xlsx";
+			//Microsoft.Office.Interop.Excel.Application ExcelApp = new Microsoft.Office.Interop.Excel.Application();
 			
-			wb = ExcelApp.Workbooks.Open(filePath, Missing.Value, false, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value);
-			sh = (Microsoft.Office.Interop.Excel.Worksheet)wb.Sheets["Equity"];
-			_boughtByBulls = (Microsoft.Office.Interop.Excel.Worksheet)wb.Sheets["BoughtByBulls"];
+			//wb = ExcelApp.Workbooks.Open(filePath, Missing.Value, false, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value);
+			//sh = (Microsoft.Office.Interop.Excel.Worksheet)wb.Sheets["Equity"];
+			//_boughtByBulls = (Microsoft.Office.Interop.Excel.Worksheet)wb.Sheets["BoughtByBulls"];
 		}
 		public static void GetLastThreeYearNPM(double script)
 		{
@@ -130,7 +131,7 @@ namespace Equity
 			}
 			
 			SaveToEquityFile();
-			ExcelApp.Quit();
+			//ExcelApp.Quit();
 		}
 	
 		public void GetBalanceSheetDetails(double script)
@@ -257,19 +258,19 @@ namespace Equity
 
 		public void GenerateScriptList()
 		{			
-			for (int i = startPoint; i < fetchTill; i++)
-			{
-				Range script = (Range)sh.Cells[i, 1];
-				Range companyName = (Range)sh.Cells[i, 2];
-				_companyName.Add((double)script.Value2, companyName.Value2.ToString());
-				if ((int)script.Value2 > 0 )
-				{
-					_masterScriptList.Add((double)script.Value2, new Dictionary<int, string>());
-					_scriptList.Add((double)script.Value2);
+			//for (int i = startPoint; i < fetchTill; i++)
+			//{
+			//	Range script = (Range)sh.Cells[i, 1];
+			//	Range companyName = (Range)sh.Cells[i, 2];
+			//	_companyName.Add((double)script.Value2, companyName.Value2.ToString());
+			//	if ((int)script.Value2 > 0 )
+			//	{
+			//		_masterScriptList.Add((double)script.Value2, new Dictionary<int, string>());
+			//		_scriptList.Add((double)script.Value2);
 					 
-				}
-			}
-			ExcelApp.Quit();
+			//	}
+			//}
+			//ExcelApp.Quit();
 		}
 		 
 		public void ReadAllScript()
@@ -482,47 +483,47 @@ namespace Equity
 
 		public void SaveToEquityFile()
 		{
-			int cell = startPoint;
-			foreach(double companyid in _scriptList)
-			{
-				Dictionary<int, string> cellsValue = _masterScriptList[companyid];
-				foreach (var item in cellsValue)
-				{
-					Microsoft.Office.Interop.Excel.Range ColumnTobeUpdated = (Microsoft.Office.Interop.Excel.Range)sh.Cells[cell, item.Key];
-					ColumnTobeUpdated.Value2 = item.Value;
-				}
-				cell++;
-			}
+			//int cell = startPoint;
+			//foreach(double companyid in _scriptList)
+			//{
+			//	Dictionary<int, string> cellsValue = _masterScriptList[companyid];
+			//	foreach (var item in cellsValue)
+			//	{
+			//		Microsoft.Office.Interop.Excel.Range ColumnTobeUpdated = (Microsoft.Office.Interop.Excel.Range)sh.Cells[cell, item.Key];
+			//		ColumnTobeUpdated.Value2 = item.Value;
+			//	}
+			//	cell++;
+			//}
 
 			
-			wb.Save();
-			ExcelApp.Quit();
+			//wb.Save();
+			//ExcelApp.Quit();
 		}
 
 		public void ValuePresent(int ColumnId)
 		{
-			for (int i = 2500; i < 2916; i++)
-			{
-				Microsoft.Office.Interop.Excel.Range CompanyCode = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 1];
-				Microsoft.Office.Interop.Excel.Range ColumnTobeUpdated = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, ColumnId];
-				if (ColumnTobeUpdated.Value2 == null)
-				{
-					_currentValues.Add((double)CompanyCode.Value2);
-					Console.WriteLine("Script Added" + i);
-				}			
-			}
+			//for (int i = 2500; i < 2916; i++)
+			//{
+			//	Microsoft.Office.Interop.Excel.Range CompanyCode = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 1];
+			//	Microsoft.Office.Interop.Excel.Range ColumnTobeUpdated = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, ColumnId];
+			//	if (ColumnTobeUpdated.Value2 == null)
+			//	{
+			//		_currentValues.Add((double)CompanyCode.Value2);
+			//		Console.WriteLine("Script Added" + i);
+			//	}			
+			//}
 			 
-			ExcelApp.Quit();
-			Console.WriteLine("Total Script Added" + _currentValues.Count);
+			//ExcelApp.Quit();
+			//Console.WriteLine("Total Script Added" + _currentValues.Count);
 		}
 		public void GetPreviousInterestPaidCapital()
 		{
-			GenerateScriptList();
+			//GenerateScriptList();
 
-			GetEPSForYear();
+			//GetEPSForYear();
 
-			SaveToEquityFile();
-			ExcelApp.Quit();
+			//SaveToEquityFile();
+			//ExcelApp.Quit();
 		}
 
 		public void getbigbullpurchase()
@@ -551,12 +552,12 @@ namespace Equity
 						{
 							Console.Write(rowid);
 
-							Microsoft.Office.Interop.Excel.Range scriptid = (Microsoft.Office.Interop.Excel.Range)_boughtByBulls.Cells[dataid, 1];
-							Microsoft.Office.Interop.Excel.Range bullname = (Microsoft.Office.Interop.Excel.Range)_boughtByBulls.Cells[dataid, 2];
-							scriptid.Value2 = script;
-							bullname.Value2 = buyer;
-							dataid++;
-							wb.Save();
+							//Microsoft.Office.Interop.Excel.Range scriptid = (Microsoft.Office.Interop.Excel.Range)_boughtByBulls.Cells[dataid, 1];
+							//Microsoft.Office.Interop.Excel.Range bullname = (Microsoft.Office.Interop.Excel.Range)_boughtByBulls.Cells[dataid, 2];
+							//scriptid.Value2 = script;
+							//bullname.Value2 = buyer;
+							//dataid++;
+							//wb.Save();
 							 
 							
 						}
@@ -570,12 +571,13 @@ namespace Equity
 					continue;
 				}
 			}
-			ExcelApp.Quit();
+			//ExcelApp.Quit();
 		}
 
-		public void CompareItem()
+		public void GetProcurementDetails()
 		{
-
+			component.getEprocObj().ShowProcurementInfo();
+			 
 		}
 		
 

@@ -194,12 +194,25 @@ namespace Equity
 				string result="0";
 				if (eq.assetType == AssetType.Shares)
 				{
-					result = doc.DocumentNode.SelectNodes("//*[@id='bsecp']")[0].InnerText;
-					Console.WriteLine("Price for id:" + eq.ISIN + " Is:" + result.ToString());
+					try
+					{
+						HtmlNodeCollection node = doc.DocumentNode.SelectNodes("//*[@id='nsecp']");
+						if (node == null)
+							node = doc.DocumentNode.SelectNodes("//*[@id='bsecp']");
+						
+						result = node[0].InnerText;
+						Console.WriteLine("Price for :" + eq.divUrl.Split('/')[5] + " Is:" + result.ToString());
+					}
+					catch(Exception ex)
+					{
+						result = doc.DocumentNode.SelectNodes("//*[@id='bsecp']")[0].InnerText;
+						Console.WriteLine("Price for :" + eq.divUrl.Split('/')[5] + " Is:" + result.ToString());
+					}
 				}
 				else
 				{
 					result = doc.DocumentNode.SelectNodes("//span[@class='amt']")[0].InnerText.Split(' ')[1];
+					Console.WriteLine("Price for id:" + eq.ISIN + " Is:" + result.ToString());
 				}
 				return Convert.ToDouble(result);
 			}

@@ -231,14 +231,31 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 		}
-		public bool UpdatePFSnapshot(int m,int y,int portfolioId)
+		public bool UpdatePFSnapshot(int m,int y,int portfolioId,double invst)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,qtr,assettype,assetvalue,dividend,invstmt)
-							 select " + portfolioId + ","+y+","+m+",accttype ,amt,0,0 from myfin.bankdetail where useracctid in(16,17) and folioid="+portfolioId+";", _conn);
+							 select " + portfolioId + ","+y+","+m+ ",ba.accttype ,amt,0,"+ invst+" from myfin.bankdetail bt " +
+							 "join myfin.bankaccounttype ba on ba.accttypeid = bt.accttypeId " +
+							 " where folioid = "+ portfolioId + " and bt.accttypeid in (16, 17);", _conn);
 				 
+				int result = command.ExecuteNonQuery();
+
+				return true;
+
+			}
+		}
+		public bool UpdatePFSnapshot(AssetHistory astHstry)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"REPLACE myfin.assetsnapshot
+							 set  portfolioid=" + astHstry.portfolioId + ", year=" + astHstry.year + ",qtr=" + astHstry.month + ",assettype=" + (int)astHstry.assetType + ",assetvalue=" + astHstry.AssetValue + ",dividend="+ astHstry.Dividend +
+							 ",invstmt=" + astHstry.Investment +";", _conn);
+
 				int result = command.ExecuteNonQuery();
 
 				return true;
@@ -251,8 +268,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,qtr,assettype,assetvalue,dividend,invstmt)
-							 select " + portfolioId + "," + y + "," + m + ",6, sum(amt),0,0 from myfin.bankdetail " +
-							 "where folioid="+portfolioId+" and accttype=6  group by userid;", _conn);
+							 select " + portfolioId + "," + y + "," + m + ",6, sum(amt),0,0 from myfin.bankdetail bt join myfin.bankaccounttype ba " +
+							 "on ba.accttypeid = bt.accttypeId" +
+							 " where folioid="+portfolioId+ " and ba.accttype=6  group by folioid;", _conn);
 
 				int result = command.ExecuteNonQuery();
 
@@ -384,5 +402,25 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 
+		public void GetPf_PPFTransaction(int folioId, IList<pf> pftran,string type)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"select * from myfin.pf where folioid=" + folioId + " AND type='"+type+"' order by dtofchange asc;", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					pftran.Add(new pf(){  
+						dtOfChange = Convert.ToDateTime(reader["dtofchange"]),
+						empCont = Convert.ToDouble(reader["emp"]),
+						emplyrCont= Convert.ToDouble(reader["employer"]),
+						pension= Convert.ToDouble(reader["pension"]),
+						type= reader["typeofcredit"].ToString()
+					});			
+				}
+			}
+		}
 	}
 }
