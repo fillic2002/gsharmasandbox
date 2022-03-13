@@ -39,6 +39,19 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 			return true;
 		}
+		public bool UpdateCompanyDetail(equity eq)
+		{
+			
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"UPDATE myfin.equitydetails SET divLink = '" + eq.divUrl+ "'," +
+									" description='" + eq.sourceurl + "' WHERE (ISIN = '" + eq.ISIN + "');", _conn);
+
+				int result = command.ExecuteNonQuery();
+			}
+			return true;
+		}
 		public double GetLatesNAV(string ISIN)
 		{
 			double result = 0;
@@ -110,7 +123,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 		}
 		 
-
 		public void GetStaleDividendCompanies(IList<dividend> item)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
@@ -133,7 +145,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 		}
-
 		public void GetTransactions(IList<EquityTransaction> p, int portfolioId)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
@@ -191,13 +202,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 		}
-
 		public void GetPFSnapshot(IList<AssetHistory> h, int portfolioId)
 		{
 			//using (MySqlConnection _conn = new MySqlConnection(connString))
 			//{
 			//	_conn.Open();
-			//	using var command = new MySqlCommand(@"SELECT myfin.assetsnapshot(portfolioid,year,qtr,assettype,assetvalue,dividend,invstmt)
+			//	using var command = new MySqlCommand(@"SELECT myfin.assetsnapshot(portfolioid,year,month,assettype,assetvalue,dividend,invstmt)
 			//				values( select " + portfolioId + ",YEAR(dateoftransaction),MONTH(dateoftransaction),useracctid ,amt,0,0 from myfin.bankdetail;", _conn);
 			//	using var reader = command.ExecuteReader();
 
@@ -236,8 +246,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,qtr,assettype,assetvalue,dividend,invstmt)
-							 select " + portfolioId + ","+y+","+m+ ",ba.accttype ,amt,0,"+ invst+" from myfin.bankdetail bt " +
+				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,month,assettype,assetvalue,dividend,invstmt)
+							 select " + portfolioId + ","+y+","+m+ ",ba.accttype ,amt,0,"+ invst+ " from myfin.AccoutBalance bt " +
 							 "join myfin.bankaccounttype ba on ba.accttypeid = bt.accttypeId " +
 							 " where folioid = "+ portfolioId + " and bt.accttypeid in (16, 17);", _conn);
 				 
@@ -253,7 +263,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE myfin.assetsnapshot
-							 set  portfolioid=" + astHstry.portfolioId + ", year=" + astHstry.year + ",qtr=" + astHstry.month + ",assettype=" + (int)astHstry.assetType + ",assetvalue=" + astHstry.AssetValue + ",dividend="+ astHstry.Dividend +
+							 set  portfolioid=" + astHstry.portfolioId + ", year=" + astHstry.year + ",month=" + astHstry.month + ",assettype=" + (int)astHstry.assetType + ",assetvalue=" + astHstry.AssetValue + ",dividend="+ astHstry.Dividend +
 							 ",invstmt=" + astHstry.Investment +";", _conn);
 
 				int result = command.ExecuteNonQuery();
@@ -267,8 +277,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,qtr,assettype,assetvalue,dividend,invstmt)
-							 select " + portfolioId + "," + y + "," + m + ",6, sum(amt),0,0 from myfin.bankdetail bt join myfin.bankaccounttype ba " +
+				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,month,assettype,assetvalue,dividend,invstmt)
+							 select " + portfolioId + "," + y + "," + m + ",6, sum(amt),0,0 from myfin.AccoutBalance bt join myfin.bankaccounttype ba " +
 							 "on ba.accttypeid = bt.accttypeId" +
 							 " where folioid="+portfolioId+ " and ba.accttype=6  group by folioid;", _conn);
 
@@ -280,13 +290,13 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		}
 
 
-		public void GetCompaniesDividendDetails(IList<dividend> d, int portfolioId)
+		public void GetCompaniesDividendDetails(IList<dividend> d, int portfolioId, int month, int year)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@" SELECT * FROM myfin.dividend 
-					Where isin in (SELECT isin FROM myfin.equitytransactions where portfolioid="+ portfolioId + ")" +
+					Where isin in (SELECT isin FROM myfin.equitytransactions where portfolioid="+ portfolioId + ") and year(dtupdated)="+year+" and month(dtupdated)="+ month+ "" +
 					"	order by isin,dtupdated desc;", _conn);
 				using var reader = command.ExecuteReader();
 
@@ -325,7 +335,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"REPLACE into myfin.assetsnapshot(portfolioid,qtr,year,assetvalue,dividend,invstmt,assettype) 
+				using var command = new MySqlCommand(@"REPLACE into myfin.assetsnapshot(portfolioid,month,year,assetvalue,dividend,invstmt,assettype) 
 										values('" + item.portfolioId + "','" + item.month+ "','" + item.year + "','" + 
 											item.AssetValue +"','"+ item.Dividend + "','" + item.Investment + "','"+(int)item.assetType+"' );", _conn);
 				int reader = command.ExecuteNonQuery();
@@ -339,8 +349,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"Select portfolioid,qtr,year,assetvalue,dividend,invstmt,assettype 
-										from myfin.assetsnapshot where portfolioid=" + hstry.portfolioId + " AND qtr=" + hstry.month + 
+				using var command = new MySqlCommand(@"Select portfolioid,month,year,assetvalue,dividend,invstmt,assettype 
+										from myfin.assetsnapshot where portfolioid=" + hstry.portfolioId + " AND month=" + hstry.month + 
 										" AND year=" + hstry.year + " AND assettype=" + (int)hstry.assetType + ";", _conn);
 				using var reader = command.ExecuteReader();
 
@@ -402,12 +412,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 
-		public void GetPf_PPFTransaction(int folioId, IList<pf> pftran,string type)
+		public void GetPf_PPFTransaction(int folioId, IList<pf> pftran,AssetType type)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"select * from myfin.pf where folioid=" + folioId + " AND type='"+type+"' order by dtofchange asc;", _conn);
+				using var command = new MySqlCommand(@"select * from myfin.pf where folioid=" + folioId + " AND type="+Convert.ToInt32( type)+" order by dtofchange asc;", _conn);
 				using var reader = command.ExecuteReader();
 
 				while (reader.Read())
@@ -421,6 +431,28 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					});			
 				}
 			}
+		}
+
+		public void GetCompaniesMissingInformation(IList<equity> itemlist)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"select name,isin from myfin.equitydetails where (description is null )AND assettypeid=1;", _conn);
+				//using var command = new MySqlCommand(@"select name,isin from myfin.equitydetails where (divlink is null OR description is null )AND assettypeid=1;", _conn);
+
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					itemlist.Add(
+						new equity()
+						{
+						 Companyname=reader["name"].ToString(),
+						 ISIN = reader["ISIN"].ToString()
+						});
+				}
+ 			}
 		}
 	}
 }

@@ -18,7 +18,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		IWebDriver _driver;
 		ChromeOptions chromeOptions;
 		string _webScrapperUrl= string.Empty;
-		IDictionary<int, double> yearlyPrice; 
+		IDictionary<int, double> yearlyPrice;
+		const string _mc = "https://www.moneycontrol.com/india/stockpricequote/";
 		
 		public WebScrapper()
 		{
@@ -416,6 +417,86 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			var dtt = _driver.FindElements(By.XPath("//*[@id='mc_content']/div[2]/section[2]/div/div[2]/table/tbody/tr["+yr+"]/td[1]"))[0].Text;			
 			item.dt = Convert.ToDateTime(dtt);
 			item.value = Convert.ToDouble(data.Substring(data.IndexOf("Rs.") + 3, 6));
+		}
+		public void UpdateCompanyDetails(List<equity> eq)
+		{
+			try
+			{				 
+				_driver.Navigate().GoToUrl(_mc+"/"+ eq[0].Companyname.Substring(0,1));
+
+				Thread.Sleep(1500);
+				IList<IWebElement> options =  _driver.FindElements(By.XPath("//a"));
+				Dictionary<string, string> urlList= new Dictionary<string, string>();
+				foreach(IWebElement ele in options)
+				{
+					try
+					{
+						string s = ele.GetAttribute("innerHTML");
+						string url = ele.GetAttribute("href");
+						urlList.Add(s, url);
+						Console.WriteLine(s + " Added");
+					}
+					catch(Exception ex)
+					{
+						continue;
+					}
+				}
+				foreach(string key in urlList.Keys)
+				{
+					foreach(equity e in eq)
+					{
+						if (key.Split(' ')[0] == e.Companyname.Split(' ')[0])
+						{
+							string secondWord = e.Companyname.Split(' ')[1];
+							char[] secondWord2 = key.Split(' ')[1].ToCharArray();
+							int i = 0; bool match = true;
+							foreach (char c in secondWord2)
+							{
+								//Console.WriteLine(c);
+								if(c==secondWord[i++])
+								{
+									continue;
+								}
+								else
+								{
+									match = false;
+									break;
+								}
+							}
+							//if (key.Split(' ')[1] == e.Companyname.Split(' ')[1])
+							//{
+								 
+						
+							if(match)
+							{
+								Thread.Sleep(1500);
+								e.divUrl = urlList[key];
+								component.getMySqlObj().UpdateCompanyDetail(e);
+								Console.WriteLine("Company:" + e.Companyname + " DivURL Added to DB");
+								break;
+							}
+						}
+					}
+					
+				}
+
+				//	string found = "Company found";
+				//	if (s.Split(' ')[1] == e[0].Companyname.Split(' ')[1])
+				//	{
+				//		ele.Click();
+				//		Thread.Sleep(1500);
+				//		e[0].divUrl = _driver.Url;
+				//		component.getMySqlObj().UpdateCompanyDetail(e);
+				//		Console.WriteLine("Company:" + e.Companyname + " DivURL Added to DB");
+				//	}
+				//}
+
+
+			}
+			catch (Exception ex)
+			{
+
+			}
 		}
 
 		private void GetYearlyPrice(string month, string price)

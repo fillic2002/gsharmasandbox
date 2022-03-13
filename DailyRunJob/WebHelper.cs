@@ -231,7 +231,7 @@ namespace DailyRunEquity
 		{
 			try
 			{
-				string url = "http://www.bseindia.com/corporates/shpSecurities.aspx?scripcd="+ script.ToString() +"&qtrid="+ q +"&Flag=New";
+				string url = "http://www.bseindia.com/corporates/shpSecurities.aspx?scripcd="+ script.ToString() +"&monthid="+ q +"&Flag=New";
 
 				_lastQ = String.Empty;
 				_secondLastQ = String.Empty;

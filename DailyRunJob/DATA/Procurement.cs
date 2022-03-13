@@ -75,7 +75,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						Console.ForegroundColor = ConsoleColor.White;
 					}
-					Thread.Sleep(1000);
+					Thread.Sleep(500);
 					Console.WriteLine(ele.GetAttribute("innerText"));
 				}
 				foreach (IWebElement ele in txt2)
@@ -89,7 +89,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						Console.ForegroundColor = ConsoleColor.White;
 					}
-					Thread.Sleep(1000);
+					Thread.Sleep(500);
 					Console.WriteLine(ele.GetAttribute("innerText"));
 				}
 				i++;

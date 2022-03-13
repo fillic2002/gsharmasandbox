@@ -184,7 +184,7 @@ namespace Equity
 				Console.WriteLine("Exception for item:" + ex);
 			}
 		}
-
+		
 		public async Task<double> GetAssetNAVAsync(equity eq)
 		{
 			try
