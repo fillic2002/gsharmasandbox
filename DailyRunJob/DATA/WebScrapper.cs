@@ -55,6 +55,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			_driver.Navigate().GoToUrl(e.divUrl);
 			Thread.Sleep(150);
 			IList<IWebElement> links = _driver.FindElements(By.TagName("a"));
+			bool updated = false;
 			foreach(IWebElement link in links)
 			{
 			try
@@ -70,13 +71,27 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						break;
 					}
 				}
-				else
-				{			
-					if (s != null && s.Contains("corp-actions"))
-					{
+				else // Getting the PB & Market Value of a company and update for respective transaction
+				{
+						if (!updated)
+						{
+							IList<IWebElement> pb = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
+							var pricetobook = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[18].Text;
+							var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
+							IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
+							var pr = prc[0].Text;
+							e.LivePrice = Convert.ToDouble(pr);
+							if (pricetobook != "-")
+							{
+								UpdateCompanyDetails(e, Convert.ToDouble(pricetobook), Convert.ToDouble(mc));
+							}
+							updated = true;
+						}
+						if (s != null && s.Contains("corp-actions"))
+						{
 						link.Click();
 						break;
-					}
+						}
 				}
 			}
 			catch (Exception ex)
@@ -418,80 +433,41 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			item.dt = Convert.ToDateTime(dtt);
 			item.value = Convert.ToDouble(data.Substring(data.IndexOf("Rs.") + 3, 6));
 		}
-		public void UpdateCompanyDetails(List<equity> eq)
+		public void UpdateCompanyDetails(equity eq, double pb, double mv)
 		{
 			try
 			{				 
-				_driver.Navigate().GoToUrl(_mc+"/"+ eq[0].Companyname.Substring(0,1));
-
+	 
 				Thread.Sleep(1500);
-				IList<IWebElement> options =  _driver.FindElements(By.XPath("//a"));
-				Dictionary<string, string> urlList= new Dictionary<string, string>();
-				foreach(IWebElement ele in options)
+				List<EquityTransaction> eqTran = new List<EquityTransaction>();
+				component.getMySqlObj().GetTransactions( eqTran,0);
+				List<EquityTransaction> res=eqTran.FindAll(x=>x.equity.ISIN==eq.ISIN);
+
+
+				foreach(EquityTransaction tran in res)
 				{
-					try
+					if (tran.PB == 0 || tran.MC == 0)
 					{
-						string s = ele.GetAttribute("innerHTML");
-						string url = ele.GetAttribute("href");
-						urlList.Add(s, url);
-						Console.WriteLine(s + " Added");
-					}
-					catch(Exception ex)
-					{
-						continue;
+
+						//myfinAPI.Model.EquityTransaction t = new myfinAPI.Model.EquityTransaction()
+						//{
+						//	tranDate = tran.TransactionDate,
+						//	price = tran.price,
+						//	tranType = tran.TypeofTransaction.ToString(),
+						//	equityId = tran.equity.ISIN,
+						//	qty = tran.qty,
+						//	portfolioId = tran.portfolioId,
+						tran.PB= (pb / eq.LivePrice) * tran.price;
+						tran.MC = (mv / eq.LivePrice) * tran.price;
+						//};
+						component.getMySqlObj().UpdateTransaction(tran);
 					}
 				}
-				foreach(string key in urlList.Keys)
-				{
-					foreach(equity e in eq)
-					{
-						if (key.Split(' ')[0] == e.Companyname.Split(' ')[0])
-						{
-							string secondWord = e.Companyname.Split(' ')[1];
-							char[] secondWord2 = key.Split(' ')[1].ToCharArray();
-							int i = 0; bool match = true;
-							foreach (char c in secondWord2)
-							{
-								//Console.WriteLine(c);
-								if(c==secondWord[i++])
-								{
-									continue;
-								}
-								else
-								{
-									match = false;
-									break;
-								}
-							}
-							//if (key.Split(' ')[1] == e.Companyname.Split(' ')[1])
-							//{
-								 
-						
-							if(match)
-							{
-								Thread.Sleep(1500);
-								e.divUrl = urlList[key];
-								component.getMySqlObj().UpdateCompanyDetail(e);
-								Console.WriteLine("Company:" + e.Companyname + " DivURL Added to DB");
-								break;
-							}
-						}
-					}
-					
-				}
+				
 
-				//	string found = "Company found";
-				//	if (s.Split(' ')[1] == e[0].Companyname.Split(' ')[1])
-				//	{
-				//		ele.Click();
-				//		Thread.Sleep(1500);
-				//		e[0].divUrl = _driver.Url;
-				//		component.getMySqlObj().UpdateCompanyDetail(e);
-				//		Console.WriteLine("Company:" + e.Companyname + " DivURL Added to DB");
-				//	}
-				//}
-
-
+				
+				//Console.WriteLine("Company:" + e.Companyname + " DivURL Added to DB");
+			 	
 			}
 			catch (Exception ex)
 			{

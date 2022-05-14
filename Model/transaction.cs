@@ -12,6 +12,8 @@ namespace Git_Sandbox.Model
 		public double price { get; set; }		
 		public DateTime TransactionDate { get; set; }
 		public char TypeofTransaction{ get; set; }
+		public double PB { get; set; }
+		public double MC { get; set; }
 
 	}
 }

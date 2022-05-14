@@ -150,10 +150,25 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name FROM myfin.equitytransactions et
+				string query;
+			//	using var command = new MySqlCommand(@"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name FROM myfin.equitytransactions et
+			//				Join myfin.equitydetails ed
+			//				ON ed.isin=et.isin
+			//				where portfolioid=" + portfolioId + ";", _conn);
+				if (portfolioId != 0)
+				{
+					query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name FROM myfin.equitytransactions et
 							Join myfin.equitydetails ed
 							ON ed.isin=et.isin
-							where portfolioid=" + portfolioId + ";", _conn);
+							where portfolioid=" + portfolioId + ";";
+				}
+				else
+				{
+					query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name FROM myfin.equitytransactions et
+							Join myfin.equitydetails ed
+							ON ed.isin=et.isin;";
+				}
+				using MySqlCommand command = new MySqlCommand(query, _conn);
 				using var reader = command.ExecuteReader();
 
 				while (reader.Read())
@@ -175,10 +190,24 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						qty = Convert.ToInt32(reader["qty"]),
 
 
-					}); ;
+					}); 
 				}
 			}
 		}
+
+		public bool UpdateTransaction(EquityTransaction tran)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				string dt = tran.TransactionDate.ToString("yyyy-MM-dd");
+				using var command = new MySqlCommand(@"UPDATE myfin.equitytransactions 
+								SET pb= "+tran.PB+" , marketcap="+tran.MC+" WHERE ISIN='"+tran.equity.ISIN+"' AND transactiondate='"+dt+"';", _conn);
+				int result = command.ExecuteNonQuery();
+			}
+			return true;
+		}
+
 		public void GetPropertyTransactions(IList<propertyTransaction> p, int portfolioId)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
@@ -417,7 +446,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"select * from myfin.pf where folioid=" + folioId + " AND type="+Convert.ToInt32( type)+" order by dtofchange asc;", _conn);
+				using var command = new MySqlCommand(@"select * from myfin.pf where folioid=" + folioId + " AND acttype="+Convert.ToInt32( type)+" order by dtofchange asc;", _conn);
 				using var reader = command.ExecuteReader();
 
 				while (reader.Read())

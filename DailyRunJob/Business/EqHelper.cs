@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Equity;
 using Git_Sandbox.DailyRunJob;
@@ -62,6 +63,7 @@ namespace DailyRunEquity
 				if (finishedTask.Status != TaskStatus.Faulted)
 				{
 					Console.WriteLine("DB Update::" + component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
+				 
 					RecordMonthlyAssetPrice(finishedTask.Result);
 				}
 
@@ -77,23 +79,30 @@ namespace DailyRunEquity
 
 		private void RecordMonthlyAssetPrice(equity eq)
 		{
-			if (DateTime.Now.Day >= 26)
+			try
 			{
-				if (component.getMySqlObj().GetHistoricalSharePrice(eq.ISIN, DateTime.Now.Month, DateTime.Now.Year) > 0)
+				if (DateTime.Now.Day >= 26)
 				{
-					Console.WriteLine("Current Month Price already present for: " + eq.Companyname);
-				}
-				else
-				{
-					component.getMySqlObj().UpdateEquityMonthlyPrice(new equityHistory()
+					if (component.getMySqlObj().GetHistoricalSharePrice(eq.ISIN, DateTime.Now.Month, DateTime.Now.Year) > 0)
 					{
-						equityid = eq.ISIN,
-						month = DateTime.Now.Month,
-						price = eq.LivePrice,
-						year = DateTime.Now.Year,
-						assetType = Convert.ToInt32(eq.assetType)
-					});
+						Console.WriteLine("Current Month Price already present for: " + eq.Companyname);
+					}
+					else
+					{
+						component.getMySqlObj().UpdateEquityMonthlyPrice(new equityHistory()
+						{
+							equityid = eq.ISIN,
+							month = DateTime.Now.Month,
+							price = eq.LivePrice,
+							year = DateTime.Now.Year,
+							assetType = Convert.ToInt32(eq.assetType)
+						});
+					}
 				}
+			}
+			catch(Exception e)
+			{
+				Console.WriteLine(e.Message);
 			}
 		}
 		public void ReadNewExcel()
@@ -108,20 +117,20 @@ namespace DailyRunEquity
 			return item;
 		}
 
-		public void UpdateCompanyDetails()
-		{
-			IList<equity> listOfCompanies=new List<equity>();
+		//public void UpdateCompanyDetails()
+		//{
+		//	IList<equity> listOfCompanies=new List<equity>();
 
-			component.getMySqlObj().GetCompaniesMissingInformation(listOfCompanies);
+		//	component.getMySqlObj().GetCompaniesMissingInformation(listOfCompanies);
 
-			for (char c = 'A'; c < 'Z'; c++)
-			{
-				Console.Write(c );
+		//	//for (char c = 'A'; c < 'Z'; c++)
+		//	//{
+		//		//Console.Write(c );
+		//		//This function not in use 
+		//		//component.getWebScrappertObj().UpdateCompanyDetails(listOfCompanies.Where(x => x.Companyname.StartsWith(c)).ToList());
 				
-				component.getWebScrappertObj().UpdateCompanyDetails(listOfCompanies.Where(x => x.Companyname.StartsWith(c)).ToList());
-				
-			}			 
- 		}
+		//	//}			 
+ 	//	}
 
 		public void AddDividendDetails()
 		{

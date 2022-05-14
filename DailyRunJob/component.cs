@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using Equity;
 using Git_Sandbox.DailyRunJob.DATA;
+using api= myfinAPI.Data;
+using WebScrapper = Git_Sandbox.DailyRunJob.DATA.WebScrapper;
 
 namespace Git_Sandbox.DailyRunJob
 {
@@ -13,7 +15,15 @@ namespace Git_Sandbox.DailyRunJob
 		static WebScrapper _webObj;
 		static ExcelHelper _excelHelper;
 		static Procurement _eprocObj;
+		static api.mysqlContext _sqlContext;
 
+		public static api.mysqlContext getDBContextObj()
+		{
+			if (_sqlContext == null)
+				_sqlContext = new api.mysqlContext();
+
+			return _sqlContext;
+		}
 		public static Procurement getEprocObj()
 		{
 			if (_eprocObj == null)
