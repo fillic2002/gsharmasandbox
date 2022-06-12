@@ -116,14 +116,14 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"REPLACE into myfin.dividend(isin,dividend,dtupdated,lastcrawleddt) values('" + item.companyid+"','"+item.value+"','"+item.dt.ToString("yyyy-MM-dd") + "','" + item.lastCrawledDate.ToString("yyyy-MM-dd") + "');", _conn);
+				using var command = new MySqlCommand(@"REPLACE into myfin.dividend(isin,dividend,dtupdated,lastcrawleddt) values('" + item.companyid+"','"+item.value+"','"+item.dtUpdated.ToString("yyyy-MM-dd") + "','" + item.lastCrawledDate.ToString("yyyy-MM-dd") + "');", _conn);
 				int  reader = command.ExecuteNonQuery();
 				 
 				return true;
 			}
 		}
 		 
-		public void GetStaleDividendCompanies(IList<dividend> item)
+		public void GetCompaniesID(IList<dividend> item)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
@@ -157,14 +157,14 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			//				where portfolioid=" + portfolioId + ";", _conn);
 				if (portfolioId != 0)
 				{
-					query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name FROM myfin.equitytransactions et
+					query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name,ed.divlink FROM myfin.equitytransactions et
 							Join myfin.equitydetails ed
 							ON ed.isin=et.isin
 							where portfolioid=" + portfolioId + ";";
 				}
 				else
 				{
-					query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name FROM myfin.equitytransactions et
+					query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name,ed.divlink FROM myfin.equitytransactions et
 							Join myfin.equitydetails ed
 							ON ed.isin=et.isin;";
 				}
@@ -180,7 +180,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 							ISIN = reader["isin"].ToString(),
 							LivePrice = Convert.ToDouble(reader["liveprice"]),
 							assetType = (AssetType)Convert.ToInt32(reader["assettypeid"]),
-							Companyname = reader["name"].ToString()
+							Companyname = reader["name"].ToString(),
+							divUrl = reader["divlink"].ToString()
 
 						},
 						price = Convert.ToDouble(reader["price"]),
@@ -188,10 +189,36 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						TransactionDate = Convert.ToDateTime(reader["TransactionDate"]),
 						TypeofTransaction = Convert.ToChar(reader["action"]),
 						qty = Convert.ToInt32(reader["qty"]),
-
+						PB = Convert.ToDouble(reader["pb"]),
+						MC= Convert.ToDouble(reader["marketcap"])
 
 					}); 
 				}
+			}
+		}
+		public void UpdateCompanyDetails(IList<EquityTransaction> res, double pb, double mv, long noShare)
+		{
+			try
+			{
+				foreach (EquityTransaction tran in res)
+				{
+					if (DateTime.Now.Subtract(tran.TransactionDate).TotalDays <= 190)
+					{
+						if (tran.PB == 0 || tran.MC == 0 || tran.equity.noOfShare == 0)
+						{
+							//tran.PB = (pb / eq.LivePrice) * tran.price;
+							//tran.MC = (mv / eq.LivePrice) * tran.price;
+							component.getMySqlObj().UpdateTransaction(tran);
+							tran.equity.noOfShare = noShare;
+							component.getMySqlObj().UpdateTransaction(tran);
+						}
+					}
+				}
+
+			}
+			catch (Exception ex)
+			{
+
 			}
 		}
 
@@ -202,7 +229,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				_conn.Open();
 				string dt = tran.TransactionDate.ToString("yyyy-MM-dd");
 				using var command = new MySqlCommand(@"UPDATE myfin.equitytransactions 
-								SET pb= "+tran.PB+" , marketcap="+tran.MC+" WHERE ISIN='"+tran.equity.ISIN+"' AND transactiondate='"+dt+"';", _conn);
+								SET pb= "+tran.PB+" , marketcap="+tran.MC+", OpenShare="+tran.equity.noOfShare+" WHERE ISIN='"+tran.equity.ISIN+"' AND transactiondate='"+dt+"';", _conn);
 				int result = command.ExecuteNonQuery();
 			}
 			return true;
@@ -334,7 +361,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					d.Add(new dividend()
 					{
 						companyid=reader["isin"].ToString() ,
-						dt= Convert.ToDateTime(reader["dtupdated"]),
+						dtUpdated= Convert.ToDateTime(reader["dtupdated"]),
 						value = Convert.ToDouble(reader["dividend"])
 					});
 				}
@@ -405,7 +432,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 				while (reader.Read())
 				{
-					d.dt = Convert.ToDateTime(reader["dtupdated"]);
+					d.dtUpdated = Convert.ToDateTime(reader["dtupdated"]);
 					d.lastCrawledDate = Convert.ToDateTime(reader["lastcrawleddt"]);					
 				}
 			}

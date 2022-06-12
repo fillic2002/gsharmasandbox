@@ -42,6 +42,32 @@ namespace DailyRunEquity
 			equity = component.getMySqlObj().GetEquityNavUrl();
 			_eqHistory = new List<equityHistory>();
 		}
+		public void AddPbAndMarketCap()
+		{
+			List<EquityTransaction> eqTran = new List<EquityTransaction>();
+			component.getMySqlObj().GetTransactions(eqTran, 0);
+			List<EquityTransaction> res = eqTran.FindAll(x => (x.PB ==0 || x.MC==0) && x.equity.assetType ==AssetType.Shares 
+							&& DateTime.Now.Subtract(x.TransactionDate).TotalDays <= 365);
+			foreach(EquityTransaction et in res)
+			{
+				dividend d = new dividend();
+				component.getWebScrappertObj().GetDividend(d,et.equity);
+				
+				//if (DateTime.Now.Subtract(et.TransactionDate).TotalDays <= 365)
+				//{
+					//if (tran.PB == 0 || tran.MC == 0 || tran.equity.noOfShare == 0)
+					//{
+						et.PB = (et.PB / et.equity.LivePrice) * et.price;
+						et.MC = (et.MC / et.equity.LivePrice) * et.price;
+						component.getMySqlObj().UpdateTransaction(et);
+						//et.equity.noOfShare = et.noShare;
+						//component.getMySqlObj().UpdateTransaction(tran);
+					//}
+				//}
+				
+			}
+			
+		}
 		/// <summary>
 		/// This function is going to get live NAV for the shares and update in the db table
 		/// </summary>
@@ -66,13 +92,9 @@ namespace DailyRunEquity
 				 
 					RecordMonthlyAssetPrice(finishedTask.Result);
 				}
-
-				//total += await finishedTask;
 			}
 			stopwatch.Stop();
-
 			Console.WriteLine($"Elapsed time:          {stopwatch.Elapsed}\n");
-
 			Console.WriteLine("Saved all records:" + DateTime.Now.ToString("hh.mm.ss.ffffff"));
 
 		}
@@ -136,18 +158,18 @@ namespace DailyRunEquity
 		{
 			IList<dividend> listCompanies = new List<dividend>();
 
-			component.getMySqlObj().GetStaleDividendCompanies(listCompanies);
+			component.getMySqlObj().GetCompaniesID(listCompanies);
 
 			IList<equity> Listurl = component.getGenericFunctionObj().GetEquityLinks();
 
 			//Check companies whose dividend details not updated in last 30 days
-			foreach (dividend u in listCompanies)
+			foreach (dividend comp in listCompanies)
 			{
-				Console.WriteLine("Stale Company:" + u.companyid);
-				component.getMySqlObj().getLastDividendOfCompany(u);
-				if (DateTime.Now.Subtract(u.dt).TotalDays >= 90 && DateTime.Now.Subtract(u.lastCrawledDate).TotalDays >= 30)
+				Console.WriteLine("Company ID:" + comp.companyid);
+				component.getMySqlObj().getLastDividendOfCompany(comp);
+				if (DateTime.Now.Subtract(comp.dtUpdated).TotalDays >= 90 && DateTime.Now.Subtract(comp.lastCrawledDate).TotalDays >= 30)
 				{
-					component.getWebScrappertObj().GetDividend(u, Listurl.First<equity>(x => x.ISIN == u.companyid));
+					component.getWebScrappertObj().GetDividend(comp, Listurl.First<equity>(x => x.ISIN == comp.companyid));
 				}
 			}
 		}
@@ -493,11 +515,11 @@ namespace DailyRunEquity
 			{
 				IEnumerable<EquityTransaction> selectedTran = t.Where(n => n.equity.ISIN == div.companyid);
 				int qty = 0;
-				if ((div.dt.Month <= month && div.dt.Year == year) || div.dt.Year < year)
+				if ((div.dtUpdated.Month <= month && div.dtUpdated.Year == year) || div.dtUpdated.Year < year)
 				{
 					foreach (EquityTransaction tran in selectedTran)
 					{
-						if (tran.equity.ISIN == div.companyid && tran.TransactionDate < div.dt)
+						if (tran.equity.ISIN == div.companyid && tran.TransactionDate < div.dtUpdated)
 						{
 							if (tran.TypeofTransaction == 'B')
 								qty += tran.qty;

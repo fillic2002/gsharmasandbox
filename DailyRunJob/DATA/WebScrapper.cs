@@ -54,52 +54,61 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			GetChromeINstance();
 			_driver.Navigate().GoToUrl(e.divUrl);
 			Thread.Sleep(150);
-			IList<IWebElement> links = _driver.FindElements(By.TagName("a"));
+			
 			bool updated = false;
-			foreach(IWebElement link in links)
-			{
+		
 			try
 			{
-				string s = link.GetAttribute("href");
-				if (e.divUrl.Contains("moneycontrol"))
+				IList<IWebElement> title= new List<IWebElement>();
+				if (!updated)
 				{
-					if (s != null && s.Contains("dividend"))
-					{
-						link.Click();
-						var newTabHandle = _driver.WindowHandles[0];
-						var newTab = _driver.SwitchTo().Window(newTabHandle).PageSource;
-						break;
-					}
-				}
-				else // Getting the PB & Market Value of a company and update for respective transaction
-				{
-						if (!updated)
+					IList<IWebElement> pb = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
+					var pricetobook = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[18].Text;
+					var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
+					IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
+					var pr = prc[0].Text;
+					e.LivePrice = Convert.ToDouble(pr);
+					title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
+					if (pricetobook != "-")
 						{
-							IList<IWebElement> pb = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
-							var pricetobook = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[18].Text;
-							var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
-							IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
-							var pr = prc[0].Text;
-							e.LivePrice = Convert.ToDouble(pr);
-							if (pricetobook != "-")
-							{
-								UpdateCompanyDetails(e, Convert.ToDouble(pricetobook), Convert.ToDouble(mc));
+						e.PB = Convert.ToDouble(pricetobook);
+						e.MC = Convert.ToDouble(mc);
+						title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
+						Thread.Sleep(1500);
+						title[8].Click();
+						Thread.Sleep(1500);
+						int counter = 0;
+						Int64 noOfShare=0;
+						IList<IWebElement> shrHld = _driver.FindElements(By.XPath("//div[@class='largetable']//td"));
+						foreach(IWebElement el in shrHld)
+						{
+							if(el.Text=="Grand Total")
+							{	
+								counter = 4;							 
 							}
-							updated = true;
+							if (counter > 0)
+							{
+								counter--;
+							}
+							if (counter == 1)
+							{
+								noOfShare= long.Parse(el.Text.Replace(",", ""));
+								e.noOfShare = noOfShare;
+								break;
+							}
 						}
-						if (s != null && s.Contains("corp-actions"))
-						{
-						link.Click();
-						break;
-						}
-				}
+					//UpdateCompanyDetails(e, Convert.ToDouble(pricetobook), Convert.ToDouble(mc), noOfShare);
+					}
+					updated = true;
+					}
+
+				title[7].Click();
 			}
 			catch (Exception ex)
 			{
-				string msg = ex.StackTrace;
-				continue;
+				string msg = ex.StackTrace;		
 			}
-		}
+		
 			Thread.Sleep(3000);
 			int i= 1;
 			//Past 2 dividend details
@@ -117,33 +126,26 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					else
 					{
 						GetDividendFromBse(div, i);
-						i++;
-						//if (DateTime.UtcNow.Subtract(item.dt).Days>90)
-						//	continue;
-						
+						i++;						
 					}
-					Console.WriteLine("Dividend Added:: Companyid:"+ div.companyid +" Date::"+ div.dt +" Value::"+div.value);
- 					if(previoudDivDate == div.dt && previousDivValue != div.value)
+					Console.WriteLine("Dividend Added:: Companyid:"+ div.companyid +" Date::"+ div.dtUpdated +" Value::"+div.value);
+ 					if(previoudDivDate == div.dtUpdated && previousDivValue != div.value)
 					{
 						div.value += previousDivValue;
 					}
 					div.lastCrawledDate = DateTime.Now;
 					component.getMySqlObj().ReplaceDividendDetails(div);
-					previoudDivDate = div.dt;
+					previoudDivDate = div.dtUpdated;
 					previousDivValue = div.value;
-
-
 				}
 				catch (Exception ex)
 				{
-				i++;
-				string msg = ex.StackTrace;
+					i++;
+					string msg = ex.StackTrace;
 					continue;
 				}
 			}
 			Dispose();
-				//return Convert.ToDouble(dividend);					 
-			
 		}
 
 		public IDictionary<int,double> GetHistoricalAssetPrice(string name, int month, int year, AssetType assetType)
@@ -423,57 +425,17 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		{ 
 			var data = _driver.FindElements(By.XPath("//*[@id='tblinsidertrd']/tbody/tr[" + yr + "]/td[2]"))[0].Text;		
 			var dtt = _driver.FindElements(By.XPath("//*[@id='tblinsidertrd']/tbody/tr[" + yr + "]/td[3]"))[0].Text;
-			item.dt = Convert.ToDateTime(dtt);
+			item.dtUpdated = Convert.ToDateTime(dtt);
 			item.value = Convert.ToDouble(data);
 		}
 		private void GetDividendFromMoneyConterol(dividend item, int yr)
 		{   //From MoneyControl
 			var data = _driver.FindElements(By.XPath("//*[@id='mc_content']/div[2]/section[2]/div/div[2]/table/tbody/tr["+yr+"]/td[5]"))[0].Text;			
 			var dtt = _driver.FindElements(By.XPath("//*[@id='mc_content']/div[2]/section[2]/div/div[2]/table/tbody/tr["+yr+"]/td[1]"))[0].Text;			
-			item.dt = Convert.ToDateTime(dtt);
+			item.dtUpdated = Convert.ToDateTime(dtt);
 			item.value = Convert.ToDouble(data.Substring(data.IndexOf("Rs.") + 3, 6));
 		}
-		public void UpdateCompanyDetails(equity eq, double pb, double mv)
-		{
-			try
-			{				 
-	 
-				Thread.Sleep(1500);
-				List<EquityTransaction> eqTran = new List<EquityTransaction>();
-				component.getMySqlObj().GetTransactions( eqTran,0);
-				List<EquityTransaction> res=eqTran.FindAll(x=>x.equity.ISIN==eq.ISIN);
-
-
-				foreach(EquityTransaction tran in res)
-				{
-					if (tran.PB == 0 || tran.MC == 0)
-					{
-
-						//myfinAPI.Model.EquityTransaction t = new myfinAPI.Model.EquityTransaction()
-						//{
-						//	tranDate = tran.TransactionDate,
-						//	price = tran.price,
-						//	tranType = tran.TypeofTransaction.ToString(),
-						//	equityId = tran.equity.ISIN,
-						//	qty = tran.qty,
-						//	portfolioId = tran.portfolioId,
-						tran.PB= (pb / eq.LivePrice) * tran.price;
-						tran.MC = (mv / eq.LivePrice) * tran.price;
-						//};
-						component.getMySqlObj().UpdateTransaction(tran);
-					}
-				}
-				
-
-				
-				//Console.WriteLine("Company:" + e.Companyname + " DivURL Added to DB");
-			 	
-			}
-			catch (Exception ex)
-			{
-
-			}
-		}
+		 
 
 		private void GetYearlyPrice(string month, string price)
 		{
