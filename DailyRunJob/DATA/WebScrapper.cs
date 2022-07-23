@@ -10,6 +10,8 @@ using System.IO;
 using CsvHelper;
 using CsvHelper.Configuration;
 using System.Globalization;
+using System.Threading.Tasks;
+using OpenQA.Selenium.Interactions;
 
 namespace Git_Sandbox.DailyRunJob.DATA
 {
@@ -20,7 +22,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		string _webScrapperUrl= string.Empty;
 		IDictionary<int, double> yearlyPrice;
 		const string _mc = "https://www.moneycontrol.com/india/stockpricequote/";
-		
+		//Specific to MF INDIA NAMING CONVENTION
+		const string _idfcMfCBF = "IDFC Corporate Bond Fund - Direct Growth";
+		const string _idfcMfMRF = "IDFC Bond Fund - Medium Term Plan-Direct Plan-Growth";
+		const string _idfcMfCRF = "IDFC Credit Risk Fund-Direct Plan-Growth";
+
+
 		public WebScrapper()
 		{
 			chromeOptions = new ChromeOptions();
@@ -38,6 +45,73 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			if(_driver !=null)
 				_driver.Quit();
 		}
+		public async Task<bool> GetMFDetails(equity eq)
+		{
+			if (string.IsNullOrEmpty(eq.sourceurl))
+			{
+				return false;
+			}
+			
+			try
+			{
+				_driver.Navigate().GoToUrl(eq.sourceurl);
+				Thread.Sleep(2500);
+				IList<IWebElement> pb = _driver.FindElements(By.XPath("//div/span[@class='amt']"));
+				Console.WriteLine("Price for::"+ eq.Companyname  +"::"+pb[0].Text);			
+				var price = pb[0].Text.Replace(" ", "").Replace("?", "");
+				eq.LivePrice = Convert.ToDouble(price.Substring(1, price.Length - 1));
+
+				IList<IWebElement> fundSize = _driver.FindElements(By.XPath("//span[@class='amt']"));
+				var fundS = fundSize[1].Text;
+				eq.PB= Convert.ToDouble(fundS.Substring(1, fundS.Length-3));
+				
+				Thread.Sleep(150);
+				return true;
+			}
+			catch(Exception ex)
+			{
+				return false;
+			}
+
+		}
+		public async Task<bool> GetEquityDetails(equity eq)
+		{
+			//if (eq.divUrl.Contains("mutual-funds"))
+			//{
+			//	return false;
+			//}
+			if (string.IsNullOrEmpty(eq.divUrl))
+			{
+				Console.WriteLine("DivURL is empty::"+eq.Companyname);
+				return false;
+			}
+			_driver.Navigate().GoToUrl(eq.divUrl);
+			Thread.Sleep(150);
+			try
+			{
+				IList<IWebElement> title = new List<IWebElement>();
+
+				IList<IWebElement> pb = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
+				var pricetobook = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[18].Text;
+				var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
+				IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
+				var pr = prc[0].Text;
+				eq.LivePrice = Convert.ToDouble(pr);
+				title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
+				if (pricetobook != "-")
+				{
+					eq.PB = Convert.ToDouble(pricetobook);
+					eq.MC = Convert.ToDouble(mc);					 
+				}
+			}
+			catch(Exception ex)
+			{
+				Console.WriteLine("Some problem fetching company details:"+eq.ISIN);
+				Console.WriteLine(ex.StackTrace);
+			}
+			Console.WriteLine("Successfully got company details:" + eq.ISIN);
+			return true;
+		}
 		public void GetDividend(dividend d,equity e)
 		{
 			if (e.divUrl.Contains("mutual-funds"))
@@ -46,12 +120,14 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 			if(string.IsNullOrEmpty(e.divUrl))
 			{
+				Console.WriteLine("DivURL missing for company:"+e.ISIN);
 				return;
 			}
 			dividend div = new dividend();
 			div.companyid = e.ISIN;
 			
-			GetChromeINstance();
+			//if(_driver==null)
+				GetChromeINstance();
 			_driver.Navigate().GoToUrl(e.divUrl);
 			Thread.Sleep(150);
 			
@@ -73,9 +149,13 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						{
 						e.PB = Convert.ToDouble(pricetobook);
 						e.MC = Convert.ToDouble(mc);
-						title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
-						Thread.Sleep(1500);
-						title[8].Click();
+						title = _driver.FindElements(By.XPath("//h1[@class='panel-title']/a"));
+						Thread.Sleep(2500);
+						Actions actions = new Actions(_driver);
+						actions.MoveToElement(title[4]);
+						actions.Perform();
+
+						title[4].Click();
 						Thread.Sleep(1500);
 						int counter = 0;
 						Int64 noOfShare=0;
@@ -97,12 +177,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 								break;
 							}
 						}
-					//UpdateCompanyDetails(e, Convert.ToDouble(pricetobook), Convert.ToDouble(mc), noOfShare);
+					
 					}
 					updated = true;
 					}
 
-				title[7].Click();
+				title[3].Click();
 			}
 			catch (Exception ex)
 			{
@@ -162,101 +242,101 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				//GetHistoricalMFPrice(name, month, year);
 				Dictionary<int,double> price= new Dictionary<int, double>();
 				// This is a webscrapper
-				//price.Add(month, GetHistoricalMFPrice(name, month, year));
+				price.Add(month, GetHistoricalMFPrice(name, month, year));
 				//This is to read from a file
-				GetHistoricalMFPrice(assetType);
+				//GetHistoricalMFPrice(assetType);
 				return price;
 			}
-			//return GetHistoricalSharePrice(name, month, year);
+			return GetHistoricalSharePrice(name, month, year);
 		}
 		CsvConfiguration csvConfig = new CsvConfiguration(CultureInfo.CurrentCulture)
 		{
 			HasHeaderRecord = false
 		};
 
-		private void GetHistoricalMFPrice(AssetType assetType)
-		{
-			try
-			{
-				using var streamReader = File.OpenText("..\\..\\..\\AxisLongTerm.csv");
-				using var csvReader = new CsvReader(streamReader, csvConfig);
+		//private void GetHistoricalMFPrice(AssetType assetType)
+		//{
+		//	try
+		//	{
+		//		using var streamReader = File.OpenText("..\\..\\..\\AxisLongTerm.csv");
+		//		using var csvReader = new CsvReader(streamReader, csvConfig);
 
-				string value;
+		//		string value;
 
-				while (csvReader.Read())
-				{
-					int month= 0;
-					int year = 0;
-					for (int i = 0; csvReader.TryGetField<string>(i, out value); i++)
-					{
+		//		while (csvReader.Read())
+		//		{
+		//			int month= 0;
+		//			int year = 0;
+		//			for (int i = 0; csvReader.TryGetField<string>(i, out value); i++)
+		//			{
 						
-						switch(i)
-						{
-							case 0:
-								if (value.Contains("Date"))
-									break;
-								if (value.Contains("January"))
-									month = 1;
-								if (value.Contains("February"))
-									month = 2;
-								if (value.Contains("March"))
-									month = 3;
-								if (value.Contains("April"))
-									month = 4;
-								if (value.Contains("May"))
-									month = 5;
-								if (value.Contains("June"))
-									month = 6;
-								if (value.Contains("July"))
-									month = 7;
-								if (value.Contains("August"))
-									month = 8;
-								if (value.Contains("September"))
-									month = 9;
-								if (value.Contains("October"))
-									month = 10;
-								if (value.Contains("November"))
-									month = 11;
-								if (value.Contains("December"))
-									month = 12;
-								if (value.Contains("2018"))
-									year = 2018;
-								if (value.Contains("2017"))
-									year = 2017;
-								if (value.Contains("2019"))
-									year = 2019;
-								if (value.Contains("2020"))
-									year = 2020;
-								if (value.Contains("2021"))
-									year = 2021;
-								if (value.Contains("2016"))
-									year = 2016;
-								if (value.Contains("2015"))
-									year = 2015;
-								break;
-							case 1:
-								break;
-							case 2:
-								component.getMySqlObj().UpdateEquityMonthlyPrice(new equityHistory()
-								{
-									equityid = "4",
-									month = month,
-									price = Convert.ToDouble(value),
-									year = year,
-									assetType = Convert.ToInt32(AssetType.EquityMF)
-								});
-								break;
-						}						
-					}
+		//				switch(i)
+		//				{
+		//					case 0:
+		//						if (value.Contains("Date"))
+		//							break;
+		//						if (value.Contains("January"))
+		//							month = 1;
+		//						if (value.Contains("February"))
+		//							month = 2;
+		//						if (value.Contains("March"))
+		//							month = 3;
+		//						if (value.Contains("April"))
+		//							month = 4;
+		//						if (value.Contains("May"))
+		//							month = 5;
+		//						if (value.Contains("June"))
+		//							month = 6;
+		//						if (value.Contains("July"))
+		//							month = 7;
+		//						if (value.Contains("August"))
+		//							month = 8;
+		//						if (value.Contains("September"))
+		//							month = 9;
+		//						if (value.Contains("October"))
+		//							month = 10;
+		//						if (value.Contains("November"))
+		//							month = 11;
+		//						if (value.Contains("December"))
+		//							month = 12;
+		//						if (value.Contains("2018"))
+		//							year = 2018;
+		//						if (value.Contains("2017"))
+		//							year = 2017;
+		//						if (value.Contains("2019"))
+		//							year = 2019;
+		//						if (value.Contains("2020"))
+		//							year = 2020;
+		//						if (value.Contains("2021"))
+		//							year = 2021;
+		//						if (value.Contains("2016"))
+		//							year = 2016;
+		//						if (value.Contains("2015"))
+		//							year = 2015;
+		//						break;
+		//					case 1:
+		//						break;
+		//					case 2:
+		//						component.getMySqlObj().UpdateEquityMonthlyPrice(new equityHistory()
+		//						{
+		//							equityid = "4",
+		//							month = month,
+		//							price = Convert.ToDouble(value),
+		//							year = year,
+		//							assetType = Convert.ToInt32(AssetType.EquityMF)
+		//						});
+		//						break;
+		//				}						
+		//			}
 
-					Console.WriteLine();
-				}
-			}
-			catch(Exception ex)
-			{
-				string s = ex.Message;
-			}
-		}
+		//			Console.WriteLine();
+		//		}
+		//	}
+		//	catch(Exception ex)
+		//	{
+		//		string s = ex.Message;
+		//	}
+		//}
 		private IDictionary<int,double> GetHistoricalSharePrice(string name, int month, int year)
 		{			
 			try
@@ -334,6 +414,22 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 			Dispose();
 		}
+		public string GetActualFundName(string DBSavedMFName)
+		{
+			if (DBSavedMFName.Contains("IDFC Corporate"))
+				return _idfcMfCBF;
+			if (DBSavedMFName.Contains("IDFC Credit"))
+				return _idfcMfCRF;
+			if (DBSavedMFName.Contains("IDFC Bond"))
+				return _idfcMfCRF;
+			if (DBSavedMFName.Contains("Axis Long"))
+				return "Axis Long Term Equity Fund - Direct Plan - Growth Option";
+			if (DBSavedMFName.Contains("Kotak Corporate"))
+				return "Kotak Corporate Bond Fund- Direct Plan- Growth Option";
+			if (DBSavedMFName.Contains("SBI Long"))
+				return "SBI LONG TERM ADVANTAGE FUND - SERIES I - DIRECT PLAN - GROWTH";
+			return "";
+		}
 		private double GetHistoricalMFPrice(string name, int month, int year)
 		{
 			try
@@ -342,23 +438,33 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				if (name == null)
 					return 0;
 				Thread.Sleep(1500);
-				GetChromeINstance();
+				string mfiFundName=GetActualFundName(name);	
 				_driver.Navigate().GoToUrl(_webScrapperUrl);
 
 				Thread.Sleep(1500);
 				IList<IWebElement> option = _driver.FindElements(By.XPath("//form[@id='navhistory']"));
 				IList<IWebElement> tableRow = option[0].FindElements(By.TagName("input"));
-				tableRow[3].Click();
+				tableRow[2].Click();
 
 				
 				//option[2].Click();
 				string sub = name.Substring(0, length);
-				IWebElement input = _driver.FindElement(By.XPath("//*[@id='mfSearchInput']"));
-				input.SendKeys(sub);
-
-				IList<IWebElement> suggest = _driver.FindElements(By.XPath("/html/body/div[1]/div[8]/section[2]/div/div[1]/div[2]/div[2]/div/ul/li[2]/div/div[1]/div/ul/li"));
-
-				while (suggest.Count > 1 || suggest.Count == 0)
+				tableRow[5].SendKeys(name.Substring(0,4));
+				//IWebElement input = _driver.FindElement(By.XPath("//*[@id='mfSearchInput']"));
+				IList<IWebElement> suggest = _driver.FindElements(By.XPath("//ul//li[@role='presentation']"));
+				//input.SendKeys(sub);
+				IWebElement mfNames=option[0].FindElement(By.XPath("//ul//li[@role='presentation']//a"));
+				//SelectElement mfName = new SelectElement(mfNames);
+				mfNames.Click();
+				Thread.Sleep(3000);
+				//IList <IWebElement> suggest = _driver.FindElements(By.XPath("//ul//li[@role='presentation']"));
+				tableRow[7].Click();
+				Thread.Sleep(1000);
+				tableRow[7].SendKeys(mfiFundName.Substring(0,mfiFundName.Length-1));
+				Thread.Sleep(2000);
+				suggest = _driver.FindElements(By.XPath("//ul//li[@role='presentation']"));
+				Thread.Sleep(2000);
+				while (suggest.Count > 2 || suggest.Count == 0)
 				{
 					if (name.Length != length)
 					{
@@ -366,50 +472,55 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						string c = name.Substring(length, 1);
 						length++;
 						//sub += c;
-						Thread.Sleep(1500);
-						input.Clear();
-						Thread.Sleep(1500);
-						input.SendKeys(c);
-						Thread.Sleep(2500);
-						suggest = _driver.FindElements(By.XPath("/html/body/div[1]/div[8]/section[2]/div/div[1]/div[2]/div[2]/div/ul/li[2]/div/div[1]/div/ul/li"));
+						//Thread.Sleep(1000);
+						//input.Clear();
+						//tableRow[7].Click();
+						Thread.Sleep(400);
+						//input.SendKeys(c);
+						tableRow[7].SendKeys(c);
+						//Thread.Sleep(2500);
+						suggest = _driver.FindElements(By.XPath("//ul//li[@role='presentation']"));
 					}
 					else
 						break;
 
 				}
-				suggest[0].Click();
+				suggest[1].Click();
 				Thread.Sleep(3500);
 				WebDriverWait wait = new WebDriverWait(_driver,new TimeSpan(1500));
+
+				tableRow[9].Click();
 				 
-				//IWebElement from = _driver.FindElement(By.XPath("//*[@id='ui-item-0']"));
-			 
-				//from.Click();
-				//Thread.Sleep(1500);
-				IWebElement dayStart = _driver.FindElement(By.XPath("//*[@id='fromDate']/div/input[1]"));
-			 
-				dayStart.SendKeys("25");
-				IWebElement monthStart = _driver.FindElement(By.XPath("//*[@id='fromDate']/div/input[2]"));
-				monthStart.SendKeys(month.ToString());
-				IWebElement yrStart = _driver.FindElement(By.XPath("//*[@id='fromDate']/div/input[3]"));
-				yrStart.SendKeys(year.ToString());
+				//IWebElement dayStart = _driver.FindElement(By.XPath("//tr[@id='trToDate']/div/input[1]"));
+				tableRow[9].SendKeys("22-Jun-2022");
+				//dayStart.SendKeys("25");
+				tableRow[10].Click();
+				tableRow[10].SendKeys("25-Jun-2022");
+				//IWebElement monthStart = _driver.FindElement(By.XPath("//*[@id='fromDate']/div/input[2]"));
+				//monthStart.SendKeys(month.ToString());
+				//IWebElement yrStart = _driver.FindElement(By.XPath("//*[@id='fromDate']/div/input[3]"));
+				//yrStart.SendKeys(year.ToString());
 
 				//wait.Until(ExpectedConditions.VisibilityOfAllElementsLocatedBy(By.XPath("//*[@id='toDate']/div/input[1]")));
-				wait.Until(x => x.FindElement(By.XPath("//*[@id='toDate']/div/input[1]")));
-				IWebElement today = _driver.FindElement(By.XPath("//*[@id='toDate']/div/input[1]"));
-				today.SendKeys("30");
-				IWebElement toMonth = _driver.FindElement(By.XPath("//*[@id='toDate']/div/input[2]"));
-				toMonth.SendKeys(month.ToString());
-				IWebElement toYear = _driver.FindElement(By.XPath("//*[@id='toDate']/div/input[3]"));
-				toYear.SendKeys(year.ToString());
+				//wait.Until(x => x.FindElement(By.XPath("//*[@id='toDate']/div/input[1]")));
+				//IWebElement today = _driver.FindElement(By.XPath("//a[@id='hrfGo']"));
+				//today.SendKeys("30");
+				//IWebElement toMonth = _driver.FindElement(By.XPath("//*[@id='toDate']/div/input[2]"));
+				//toMonth.SendKeys(month.ToString());
+				//IWebElement toYear = _driver.FindElement(By.XPath("//*[@id='toDate']/div/input[3]"));
+				//toYear.SendKeys(year.ToString());
 
 				//todate.SendKeys(Keys.Tab);
 				 
 				Thread.Sleep(1500);
-				_driver.FindElement(By.XPath("//*[@id='submit']")).Click();
-				Thread.Sleep(1500);
-				IWebElement result = _driver.FindElement(By.XPath("//*[@id='mf_nav_table']/table/tbody/tr[1]/td[3]"));
+				_driver.FindElement(By.XPath("//tr[@id='trToDate']")).Click();
+				Thread.Sleep(500);
+				_driver.FindElement(By.XPath("//*[@id='hrfGo']")).Click();
 
-				return Convert.ToDouble(result.Text.Substring(1));
+				Thread.Sleep(1500);
+				IWebElement result = _driver.FindElement(By.XPath("//*[@id='divExcelPeriod']/table/tbody/tr[6]/td[1]"));
+				var re = result.Text;
+				return Convert.ToDouble(result.Text);
 				//var result = _driver.FindElement(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[4]/div[4]/table/tbody/tr[3]/td[5]")).Text;
 
 				//return Convert.ToDouble(result);
@@ -435,8 +546,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			item.dtUpdated = Convert.ToDateTime(dtt);
 			item.value = Convert.ToDouble(data.Substring(data.IndexOf("Rs.") + 3, 6));
 		}
-		 
-
 		private void GetYearlyPrice(string month, string price)
 		{
 			if (month.Contains("Jan"))

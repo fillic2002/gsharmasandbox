@@ -33,7 +33,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"UPDATE myfin.equitydetails SET liveprice = " + eq.LivePrice + "," +
-									" dtupdated ='" + DateTime.UtcNow.ToString("yyyy-MM-dd") + "' WHERE (ISIN = '" + eq.ISIN + "');", _conn);
+									" dtupdated ='" + DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss") + "', pb= "+eq.PB+", " +
+									" marketcap="+eq.MC+" WHERE ISIN = '" + eq.ISIN + "';", _conn);
 
 				int result = command.ExecuteNonQuery();
 			}
@@ -72,17 +73,25 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"select isin, divlink,assettypeid,description from myfin.equitydetails where myfin.equitydetails.description IS NOT NULL;", _conn);
+				using var command = new MySqlCommand(@"select name,dtupdated,isin, divlink,assettypeid,description from myfin.equitydetails where myfin.equitydetails.description IS NOT NULL;", _conn);
 				using var reader = command.ExecuteReader();
 				IList<equity> eq = new List<equity>();
 				while (reader.Read())
 				{
+					DateTime tim = new DateTime(1000, 1, 1);
+					var ss = reader["dtupdated"];
+					if (ss.ToString() != "")
+						tim = Convert.ToDateTime(reader["dtupdated"]);
+					
 					eq.Add(new equity()
 					{
 						ISIN = reader["isin"].ToString(),
 						sourceurl = reader["description"].ToString(),
 						assetType = (AssetType)((int)reader["assettypeid"]),
-						divUrl = reader["divlink"].ToString()
+						divUrl = reader["divlink"].ToString(),						
+						lastUpdated =tim,
+						Companyname = reader["name"].ToString()
+						
 					});
 				}
 				return eq;
@@ -290,10 +299,17 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 				using var reader = command.ExecuteReader();
 
+				
 				while (reader.Read())
 				{
+					DateTime tim = new DateTime(1000, 1, 1);
+					var ss = reader["dtupdated"];
+					if (ss.ToString() != "")
+						tim = Convert.ToDateTime(reader["dtupdated"]);
+
 					e.Companyname = reader["Name"].ToString();
 					e.LivePrice = Convert.ToDouble(reader["liveprice"]);
+					e.lastUpdated = tim;
 				}
 			}
 		}

@@ -52,19 +52,9 @@ namespace DailyRunEquity
 			{
 				dividend d = new dividend();
 				component.getWebScrappertObj().GetDividend(d,et.equity);
-				
-				//if (DateTime.Now.Subtract(et.TransactionDate).TotalDays <= 365)
-				//{
-					//if (tran.PB == 0 || tran.MC == 0 || tran.equity.noOfShare == 0)
-					//{
-						et.PB = (et.PB / et.equity.LivePrice) * et.price;
-						et.MC = (et.MC / et.equity.LivePrice) * et.price;
-						component.getMySqlObj().UpdateTransaction(et);
-						//et.equity.noOfShare = et.noShare;
-						//component.getMySqlObj().UpdateTransaction(tran);
-					//}
-				//}
-				
+				et.PB = (et.equity.PB / et.equity.LivePrice) * et.price;
+				et.MC = (et.equity.MC / et.equity.LivePrice) * et.price;
+				component.getMySqlObj().UpdateTransaction(et);				
 			}
 			
 		}
@@ -72,7 +62,7 @@ namespace DailyRunEquity
 		/// This function is going to get live NAV for the shares and update in the db table
 		/// </summary>
 		/// <returns></returns>
-		public async Task UpdateShareCurrentPrice()
+		public async Task UpdateEquityLiveData()
 		{
 			var stopwatch = Stopwatch.StartNew();
 			IEnumerable<Task<equity>> downloadTasksQuery =
@@ -84,13 +74,21 @@ namespace DailyRunEquity
 			//int total = 0;
 			while (downloadTasks.Any())
 			{
-				Task<equity> finishedTask = await Task.WhenAny(downloadTasks);
-				downloadTasks.Remove(finishedTask);
-				if (finishedTask.Status != TaskStatus.Faulted)
+				try
 				{
-					Console.WriteLine("DB Update::" + component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
-				 
-					RecordMonthlyAssetPrice(finishedTask.Result);
+					Task<equity> finishedTask = await Task.WhenAny(downloadTasks);
+					downloadTasks.Remove(finishedTask);
+					if (finishedTask.Status != TaskStatus.Faulted)
+					{
+						Console.WriteLine("DB Update::" + component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
+
+						RecordMonthlyAssetPrice(finishedTask.Result);
+					}
+				}
+				catch(Exception ex)
+				{
+					string s = ex.StackTrace;
+					continue;
 				}
 			}
 			stopwatch.Stop();
@@ -133,10 +131,32 @@ namespace DailyRunEquity
 		}
 		async Task<equity> ProcessUrlAsync(equity item)
 		{
-			
-			item.LivePrice = await _htmlHelper.GetAssetNAVAsync(item);
-				
-			return item;
+			try
+			{
+				//await _htmlHelper.GetAssetNAVAsync(item);
+				//await component.getWebScrappertObj().GetEquityDetails(item);
+				component.getMySqlObj().GetCompanyDetails(item);
+				if (item.lastUpdated <= DateTime.UtcNow.AddMinutes(-60))
+				{
+					if (item.assetType == AssetType.Shares)
+					{
+						await component.getWebScrappertObj().GetEquityDetails(item);
+					}
+					else
+					{
+						await component.getWebScrappertObj().GetMFDetails(item);
+					}
+					Thread.Sleep(1000);
+				}
+				return item;
+			}
+			catch(Exception ex)
+			{
+				Console.Write("Error in fetching LiveData:" + item.Companyname);
+				Console.Write(ex.Message);
+
+				return item;
+			}
 		}
 
 		//public void UpdateCompanyDetails()
@@ -165,10 +185,11 @@ namespace DailyRunEquity
 			//Check companies whose dividend details not updated in last 30 days
 			foreach (dividend comp in listCompanies)
 			{
-				Console.WriteLine("Company ID:" + comp.companyid);
+				Console.WriteLine("Getting Dividend detail from DB for Company ID:" + comp.companyid);
 				component.getMySqlObj().getLastDividendOfCompany(comp);
-				if (DateTime.Now.Subtract(comp.dtUpdated).TotalDays >= 90 && DateTime.Now.Subtract(comp.lastCrawledDate).TotalDays >= 30)
+				if (DateTime.Now.Subtract(comp.dtUpdated).TotalDays >= 30 && DateTime.Now.Subtract(comp.lastCrawledDate).TotalDays >= 15)
 				{
+					Console.WriteLine("Dividend Detail need Fresh from BSE:" + comp.companyid);
 					component.getWebScrappertObj().GetDividend(comp, Listurl.First<equity>(x => x.ISIN == comp.companyid));
 				}
 			}
@@ -253,10 +274,10 @@ namespace DailyRunEquity
 					preMonth = preMonth.AddMonths(1);
 					_ppfSnapshot.month = preMonth.Month;
 					_ppfSnapshot.year = preMonth.Year;
-					Console.WriteLine("Updating ac:" + p.folioId + " for month:" + _ppfSnapshot.month + "-" + _ppfSnapshot.year);
+					Console.WriteLine("Updating PF/PPF ac:" + p.folioId + " for month:" + _ppfSnapshot.month + "-" + _ppfSnapshot.year);
 					component.getMySqlObj().UpdatePFSnapshot(_ppfSnapshot);
 				}
-				if (ppf.type == "Deposit"|| ppf.type == "carry")
+				if (ppf.type == "deposit"|| ppf.type == "carry")
 				{
 					_ppfSnapshot.Investment += ppf.empCont+ppf.emplyrCont+ppf.pension;
 					_ppfSnapshot.AssetValue += ppf.empCont + ppf.emplyrCont + ppf.pension;
@@ -275,7 +296,7 @@ namespace DailyRunEquity
 			{				 
 				_ppfSnapshot.month = preMonth.Month;
 				_ppfSnapshot.year = preMonth.Year;
-				Console.WriteLine("Updating ac:" + p.folioId + " for month:" + _ppfSnapshot.month + "-" + _ppfSnapshot.year);
+				Console.WriteLine("Updating PF/PPF ac:" + p.folioId + " for month:" + _ppfSnapshot.month + "-" + _ppfSnapshot.year);
 				component.getMySqlObj().UpdatePFSnapshot(_ppfSnapshot);
 				preMonth = preMonth.AddMonths(1);
 			}
@@ -380,6 +401,7 @@ namespace DailyRunEquity
 				return;
 			AssetHistory history = new AssetHistory();
 			history.portfolioId = p.folioId;
+			history.Investment = 0;
 			history.assetType = astType;
 			if (month >= 2)
 			{
@@ -464,6 +486,7 @@ namespace DailyRunEquity
 			history.month = month;
 			history.year = year;
 			history.portfolioId = p.folioId;
+			history.Investment = 0;
 
 			//component.getMySqlObj().GetAssetSnapshot(history);
 			//if (month == DateTime.Now.Month && year == DateTime.Now.Year)
