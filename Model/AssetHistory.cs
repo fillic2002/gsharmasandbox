@@ -12,7 +12,7 @@ namespace Git_Sandbox.Model
 		public double Investment{ get; set; }
 		public int month { get; set; }
 		public int year { get; set; }
-		public int qty { get; set; }
+		public double qty { get; set; }
 		public AssetType assetType { get; set; }
 		
 	}

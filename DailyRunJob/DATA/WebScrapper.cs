@@ -54,18 +54,29 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			
 			try
 			{
+				Console.WriteLine("Access URL");
 				_driver.Navigate().GoToUrl(eq.sourceurl);
-				Thread.Sleep(2500);
-				IList<IWebElement> pb = _driver.FindElements(By.XPath("//div/span[@class='amt']"));
-				Console.WriteLine("Price for::"+ eq.Companyname  +"::"+pb[0].Text);			
-				var price = pb[0].Text.Replace(" ", "").Replace("?", "");
-				eq.LivePrice = Convert.ToDouble(price.Substring(1, price.Length - 1));
+				Thread.Sleep(5000);
 
+				Console.WriteLine("URL Opened");
+				IList<IWebElement> pb = _driver.FindElements(By.XPath("//div/span[@class='amt']"));
+
+				Console.WriteLine("Access AMT detail");
+				Thread.Sleep(1000);
+				Console.ForegroundColor = ConsoleColor.Green;
+				Console.WriteLine("Price for::"+ eq.Companyname  +"::"+pb[0].Text);
+				Console.ResetColor();
+				Thread.Sleep(1000);
+				var price = pb[0].Text.Replace(" ", "").Replace("?", "");
+				Thread.Sleep(2000);
+				eq.LivePrice = Convert.ToDouble(price.Substring(1, price.Length - 1));
+				Thread.Sleep(1500);
 				IList<IWebElement> fundSize = _driver.FindElements(By.XPath("//span[@class='amt']"));
+				Thread.Sleep(1000);
 				var fundS = fundSize[1].Text;
 				eq.PB= Convert.ToDouble(fundS.Substring(1, fundS.Length-3));
 				
-				Thread.Sleep(150);
+				Thread.Sleep(1500);
 				return true;
 			}
 			catch(Exception ex)
@@ -76,10 +87,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		}
 		public async Task<bool> GetEquityDetails(equity eq)
 		{
-			//if (eq.divUrl.Contains("mutual-funds"))
-			//{
-			//	return false;
-			//}
+			
 			if (string.IsNullOrEmpty(eq.divUrl))
 			{
 				Console.WriteLine("DivURL is empty::"+eq.Companyname);
@@ -109,10 +117,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				Console.WriteLine("Some problem fetching company details:"+eq.ISIN);
 				Console.WriteLine(ex.StackTrace);
 			}
-			Console.WriteLine("Successfully got company details:" + eq.ISIN);
+			Console.ForegroundColor = ConsoleColor.Green;
+			Console.WriteLine("Successfully got company details:" + eq.ISIN+":: Price::"+eq.LivePrice);
+			Console.ResetColor();
 			return true;
 		}
-		public void GetDividend(dividend d,equity e)
+		public void GetDividendAndTotalShare(dividend d,equity e, string flag)
 		{
 			if (e.divUrl.Contains("mutual-funds"))
 			{
@@ -126,8 +136,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			dividend div = new dividend();
 			div.companyid = e.ISIN;
 			
-			//if(_driver==null)
-				GetChromeINstance();
+			GetChromeINstance();
 			_driver.Navigate().GoToUrl(e.divUrl);
 			Thread.Sleep(150);
 			
@@ -136,6 +145,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			try
 			{
 				IList<IWebElement> title= new List<IWebElement>();
+				IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
 				if (!updated)
 				{
 					IList<IWebElement> pb = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
@@ -149,12 +159,13 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						{
 						e.PB = Convert.ToDouble(pricetobook);
 						e.MC = Convert.ToDouble(mc);
+						if (flag == "PB")
+							return;
 						title = _driver.FindElements(By.XPath("//h1[@class='panel-title']/a"));
 						Thread.Sleep(2500);
-						Actions actions = new Actions(_driver);
-						actions.MoveToElement(title[4]);
-						actions.Perform();
-
+						//IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
+						js.ExecuteScript("arguments[0].scrollIntoView();", title[4]);
+						Thread.Sleep(2500);
 						title[4].Click();
 						Thread.Sleep(1500);
 						int counter = 0;
@@ -181,7 +192,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					}
 					updated = true;
 					}
-
+				js.ExecuteScript("arguments[0].scrollIntoView();", title[3]);
+				Thread.Sleep(2500);
 				title[3].Click();
 			}
 			catch (Exception ex)
@@ -371,9 +383,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					
 				}
 				suggest[0].Click();
-				Thread.Sleep(3500);
+				Thread.Sleep(2500);
 				_driver.FindElement(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[5]/div[2]/div[6]/table/tbody/tr/td[3]/form/div[4]/select[1]/option[12]")).Click();
-				Thread.Sleep(3500);
+				Thread.Sleep(2500);
 				IWebElement selYear= _driver.FindElement(By.XPath("//select[@name='mth_to_yr']"));
 				SelectElement el = new SelectElement(selYear);
 				el.SelectByValue(year.ToString());
@@ -534,7 +546,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 		private void GetDividendFromBse(dividend item, int yr)
 		{ 
-			var data = _driver.FindElements(By.XPath("//*[@id='tblinsidertrd']/tbody/tr[" + yr + "]/td[2]"))[0].Text;		
+			var data = _driver.FindElements(By.XPath("//*[@id='tblinsidertrd']/tbody/tr[" + yr + "]/td[2]"))[0].Text;
+			Thread.Sleep(2000);
 			var dtt = _driver.FindElements(By.XPath("//*[@id='tblinsidertrd']/tbody/tr[" + yr + "]/td[3]"))[0].Text;
 			item.dtUpdated = Convert.ToDateTime(dtt);
 			item.value = Convert.ToDouble(data);

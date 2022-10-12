@@ -47,16 +47,15 @@ namespace DailyRunEquity
 			List<EquityTransaction> eqTran = new List<EquityTransaction>();
 			component.getMySqlObj().GetTransactions(eqTran, 0);
 			List<EquityTransaction> res = eqTran.FindAll(x => (x.PB ==0 || x.MC==0) && x.equity.assetType ==AssetType.Shares 
-							&& DateTime.Now.Subtract(x.TransactionDate).TotalDays <= 365);
+							&& DateTime.Now.Subtract(x.TransactionDate).TotalDays <= 30);
 			foreach(EquityTransaction et in res)
 			{
 				dividend d = new dividend();
-				component.getWebScrappertObj().GetDividend(d,et.equity);
+				component.getWebScrappertObj().GetDividendAndTotalShare(d,et.equity,"PB");
 				et.PB = (et.equity.PB / et.equity.LivePrice) * et.price;
 				et.MC = (et.equity.MC / et.equity.LivePrice) * et.price;
 				component.getMySqlObj().UpdateTransaction(et);				
-			}
-			
+			}			
 		}
 		/// <summary>
 		/// This function is going to get live NAV for the shares and update in the db table
@@ -78,10 +77,10 @@ namespace DailyRunEquity
 				{
 					Task<equity> finishedTask = await Task.WhenAny(downloadTasks);
 					downloadTasks.Remove(finishedTask);
-					if (finishedTask.Status != TaskStatus.Faulted)
+					if (finishedTask.Status != TaskStatus.Faulted && finishedTask.Result!=null)
 					{
-						Console.WriteLine("DB Update::" + component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
-
+						Console.WriteLine("DB Update::" + finishedTask.Result.Companyname+ " IS ::"+component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
+						Thread.Sleep(100);
 						RecordMonthlyAssetPrice(finishedTask.Result);
 					}
 				}
@@ -132,11 +131,9 @@ namespace DailyRunEquity
 		async Task<equity> ProcessUrlAsync(equity item)
 		{
 			try
-			{
-				//await _htmlHelper.GetAssetNAVAsync(item);
-				//await component.getWebScrappertObj().GetEquityDetails(item);
+			{			
 				component.getMySqlObj().GetCompanyDetails(item);
-				if (item.lastUpdated <= DateTime.UtcNow.AddMinutes(-60))
+				if (item.lastUpdated <= DateTime.UtcNow.AddMinutes(-1) || item.LivePrice==0)
 				{
 					if (item.assetType == AssetType.Shares)
 					{
@@ -146,9 +143,10 @@ namespace DailyRunEquity
 					{
 						await component.getWebScrappertObj().GetMFDetails(item);
 					}
-					Thread.Sleep(1000);
+					Thread.Sleep(100);
+					return item;
 				}
-				return item;
+				return null;
 			}
 			catch(Exception ex)
 			{
@@ -190,7 +188,7 @@ namespace DailyRunEquity
 				if (DateTime.Now.Subtract(comp.dtUpdated).TotalDays >= 30 && DateTime.Now.Subtract(comp.lastCrawledDate).TotalDays >= 15)
 				{
 					Console.WriteLine("Dividend Detail need Fresh from BSE:" + comp.companyid);
-					component.getWebScrappertObj().GetDividend(comp, Listurl.First<equity>(x => x.ISIN == comp.companyid));
+					component.getWebScrappertObj().GetDividendAndTotalShare(comp, Listurl.First<equity>(x => x.ISIN == comp.companyid),"Dividend");
 				}
 			}
 		}
@@ -381,11 +379,15 @@ namespace DailyRunEquity
 					{
 						history.AssetValue += pt.astvalue;
 						history.Investment += pt.investment;
+						history.qty += pt.qty;
 					}
 					else
 					{
-						history.AssetValue -= pt.astvalue;
-						history.Investment -= pt.investment;
+						history.qty -= pt.qty;			
+					}
+					if(history.qty==0)
+					{
+						history.AssetValue = 0;
 					}
 				}
 			}

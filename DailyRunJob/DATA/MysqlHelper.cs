@@ -262,7 +262,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						portfolioId = Convert.ToInt16(reader["portfolioid"]),
 						TransactionDate = Convert.ToDateTime(reader["dtofpurchase"]),
 						investment = Convert.ToDouble(reader["purchaseprc"]),
-						TypeofTransaction = Convert.ToChar(reader["tranmode"])
+						TypeofTransaction = Convert.ToChar(reader["tranmode"]),
+						qty = Convert.ToDouble(reader["qty"])
 					}); ;
 				}
 			}
