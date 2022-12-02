@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using Equity;
+using Git_Sandbox.DailyRunJob.Business;
 using Git_Sandbox.DailyRunJob.DATA;
 using api= myfinAPI.Data;
+using business = myfinAPI.Business;
 using WebScrapper = Git_Sandbox.DailyRunJob.DATA.WebScrapper;
 
 namespace Git_Sandbox.DailyRunJob
@@ -16,7 +18,39 @@ namespace Git_Sandbox.DailyRunJob
 		static ExcelHelper _excelHelper;
 		static Procurement _eprocObj;
 		static api.mysqlContext _sqlContext;
+		static BondsHelper _bondObject;
+		static api.BondsContext _bondContext;
+		static business.BondsHelper _bondBusinessHelper;
+		static business.Equity _equityBusinessHelper;
 
+		public static business.Equity getEquityBusinessHelperObj()
+		{
+			if (_equityBusinessHelper == null)
+				_equityBusinessHelper = new business.Equity();
+
+			return _equityBusinessHelper;
+		}
+		public static business.BondsHelper getBondBusinessHelperObj()
+		{
+			if (_bondBusinessHelper == null)
+				_bondBusinessHelper = new business.BondsHelper();
+
+			return _bondBusinessHelper;
+		}
+		public static api.BondsContext getBondContextObj()
+		{
+			if (_bondContext == null)
+				_bondContext = new api.BondsContext();
+
+			return _bondContext;
+		}
+		public static BondsHelper getBondsObj()
+		{
+			if (_bondObject == null)
+				_bondObject = new BondsHelper();
+
+			return _bondObject;
+		}
 		public static api.mysqlContext getDBContextObj()
 		{
 			if (_sqlContext == null)

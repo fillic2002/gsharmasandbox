@@ -6,6 +6,7 @@ using System.Text;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Git_Sandbox.Model;
+using myfinAPI.Model;
 using TinyCsvParser;
 
 namespace Git_Sandbox.DailyRunJob
@@ -16,7 +17,7 @@ namespace Git_Sandbox.DailyRunJob
         {
             CsvParserOptions csvParserOptions = new CsvParserOptions(true, ',');
             CsvUserDetailsMapping csvMapper = new CsvUserDetailsMapping();
-            CsvParser<equity> csvParser = new CsvParser<equity>(csvParserOptions, csvMapper);
+            CsvParser<EquityBase> csvParser = new CsvParser<EquityBase>(csvParserOptions, csvMapper);
             var result = csvParser
                          .ReadFromFile(@"C:\Users\fillic\Downloads\EQUITY_L.CSV", Encoding.ASCII)
                         .ToList();
@@ -26,7 +27,10 @@ namespace Git_Sandbox.DailyRunJob
                 try
                 {
                     //Console.WriteLine("Adding to db:" + details.Result + " " + details.Result.SC_CODE);
-                    component.getMySqlObj().AddAssetDetails(new equity() { Symbol = details.Result.Symbol, Companyname = details.Result.Companyname,ISIN=details.Result.ISIN });
+                    component.getMySqlObj().AddAssetDetails(new EquityBase() { symbol = details.Result.symbol, 
+                        equityName = details.Result.equityName,
+                        assetId = details.Result.assetId
+                    });
                 }
                 catch(Exception ex)
 				{

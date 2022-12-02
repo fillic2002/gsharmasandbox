@@ -10,8 +10,10 @@ using Git_Sandbox.DailyRunJob;
 using Git_Sandbox.Model;
 //using System.Web.Script.Serialization;
 using HtmlAgilityPack;
+using myfinAPI.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static myfinAPI.Model.AssetClass;
 
 namespace Equity
 {
@@ -186,7 +188,7 @@ namespace Equity
 		}
 
 
-		public async Task<double> GetPBAndMc(equity eq)
+		public async Task<double> GetPBAndMc(EquityBase eq)
 		{
 			try
 			{
@@ -213,7 +215,7 @@ namespace Equity
 				else
 				{
 					result = doc.DocumentNode.SelectNodes("//span[@class='amt']")[0].InnerText.Split(' ')[1];
-					Console.WriteLine("Price for id:" + eq.ISIN + " Is:" + result.ToString());
+					Console.WriteLine("Price for id:" + eq.assetId + " Is:" + result.ToString());
 				}
 				return Convert.ToDouble(result);
 			}
@@ -222,7 +224,7 @@ namespace Equity
 				return 0;
 			}
 		}
-		public async Task<double> GetAssetNAVAsync(equity eq)
+		public async Task<double> GetAssetNAVAsync(EquityBase eq)
 		{
 			try
 			{
@@ -249,7 +251,7 @@ namespace Equity
 				else
 				{
 					result = doc.DocumentNode.SelectNodes("//span[@class='amt']")[0].InnerText.Split(' ')[1];
-					Console.WriteLine("Price for id:" + eq.ISIN + " Is:" + result.ToString());
+					Console.WriteLine("Price for id:" + eq.assetId + " Is:" + result.ToString());
 				}
 				return Convert.ToDouble(result);
 			}
@@ -273,9 +275,9 @@ namespace Equity
 			}
 		}
 
-		public IList<equity> GetEquityLinks()
+		public IList<EquityBase> GetEquityLinks()
 		{
-			IEnumerable<equity> listPortfolio= component.getMySqlObj().GetEquityNavUrl().Distinct<equity>();
+			IEnumerable<EquityBase> listPortfolio= component.getMySqlObj().GetEquityNavUrl().Distinct<EquityBase>();
 			return listPortfolio.ToList();
 		}
 

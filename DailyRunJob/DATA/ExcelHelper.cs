@@ -4,6 +4,8 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml.Packaging;
 //using Microsoft.Office.Interop.Excel;
 //using OfficeOpenXml;
@@ -26,22 +28,35 @@ namespace Equity
 		//public Dictionary<double, Dictionary<int, string>> _roceList = new Dictionary<double, Dictionary<int, string>>();
 		//public List<double> _scriptList = new List<double>() { };
 
-		  string EQUITY_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
-		  //string ASSET_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
+	    string EQUITY_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
+
+		public string BOND_FILE_PATH = @"C:\Users\fillic\Downloads\All.csv";//ConfigurationManager.AppSettings["BOND_FILE_PATH"];	
+		public static string BOND_LIVE_PRICE = @"C:\Users\fillic\Downloads\MW-Bonds-on-CM-"+ DateTime.Now.ToString("dd-MMM-yyyy")+".csv";//ConfigurationManager.AppSettings["BOND_FILE_PATH"];
+
+		public static Dictionary<string,int> bondColumnName;
+		public static Dictionary<string, int> bondLivePriceMapping;
 
 
-		//public Dictionary<double, string> CompanyName
-		//{
-		//	get { return _companyName; }
-		//	set { _companyName = value; }
-		//}
 		public ExcelHelper()
 		{
-			//if(ExcelApp ==null)
-				//ExcelApp = new Application();
-			//if(_assetWorkBook !=null)
-			//_assetWorkBook = ExcelApp.Workbooks.Open(ASSET_FILE_PATH, Missing.Value, false, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value);
-		
+			bondColumnName = new Dictionary<string, int>();
+			bondColumnName.TryAdd("Issuer Name", 0);
+			bondColumnName.TryAdd("ISIN Code", 0);
+			bondColumnName.TryAdd("Allotment date", 0);
+			bondColumnName.TryAdd("Maturity date", 0);
+			bondColumnName.TryAdd("Face Value (Rs.)", 0);
+			bondColumnName.TryAdd("Next IP Date", 0);
+			bondColumnName.TryAdd("Coupon Frequency", 0);
+			bondColumnName.TryAdd("Credit Ratings Agency (Multiple)", 0);
+			bondColumnName.TryAdd("Rating (Multiple)", 0);
+			bondColumnName.Add("Coupon Rate(IP rate)", 0);
+			bondColumnName.Add("First IP date", 0);
+
+			bondLivePriceMapping = new Dictionary<string, int>();
+			bondLivePriceMapping.TryAdd("SYMBOL", 0);
+			bondLivePriceMapping.TryAdd("SERIES", 1);
+			bondLivePriceMapping.TryAdd("LTP", 5);
+
 		}
 
 
@@ -252,7 +267,46 @@ namespace Equity
 			}
 			return month;
 		}
+		
 
+		public void ReadBondData(IList<string> data,string filePath, Dictionary<string, int> mapping)
+		{
+			string[] lines = File.ReadAllLines(filePath);	 
+			int lineNumber = 0;
+			//IList<string> data = new List<string>();
+			Dictionary<string, int> collection2 = new Dictionary<string, int>(mapping);
+			var csvSplit = new Regex("(?:^|,)(\"(?:[^\"]+|\"\")*\"|[^,]*)", RegexOptions.Compiled);
+			string[] csvlines = File.ReadAllLines(filePath.ToString());
+			foreach (string line in csvlines)
+			{
+				string[] item = line.Split(',');
+				
+				if(lineNumber==0)
+				{
+					foreach (var key in collection2.Keys)
+					{
+						int place = item.findIndex(key);
+						if (place >= 0)
+						{
+							mapping[key] = place;
+						}
+					}
+					lineNumber++;
+				}
+				else
+				{
+					try
+					{
+						data.Add(line);
+					}
+					catch(Exception ex)
+					{
+						string s = ex.Message;
+					}
+				}
+			}	 
+
+		}
 		public double GetMonthlySharePrice(string companyid, int mnth, int year)
 		{
 			string[] lines = File.ReadAllLines(EQUITY_FILE_PATH);
@@ -297,4 +351,12 @@ namespace Equity
 
 
 		}
+
+	public static class Extensions
+	{
+		public static int findIndex<T>(this T[] array, T item)
+		{
+			return Array.FindIndex(array, val => val.Equals(item));
+		}
+	}
 }
