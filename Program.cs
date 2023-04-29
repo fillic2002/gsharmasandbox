@@ -20,9 +20,9 @@ namespace Git_Sandbox
                 //Update any missing URL
                 // obj.UpdateCompanyDetails();
 
-              component.getBondsObj().LoadBondDetails();
+             // component.getBondsObj().LoadBondDetails();
                 
-                //Update Shares latest NAV -Daily
+               //Update Shares latest NAV -Daily
                obj.UpdateEquityLiveData();		
 
                 //Add new dividend details that are updated in bse in last 90 days
@@ -32,19 +32,20 @@ namespace Git_Sandbox
 
                obj.AddPbAndMarketCap();
                
-                //Update Monthly asset details
-               obj.UpdateAssetHistory();
-
                obj.UpdatePPFSnapshot();
+               
+                obj.UpdateAssetHistory();
 
-              _webHelper.GetProcurementDetails();
+                _webHelper.GetProcurementDetails();
 
                 Console.ReadKey();
             
             }
             catch(Exception ex)
 			{
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(ex.Message);
+                Console.ResetColor();
                 component.getWebScrappertObj().Dispose(); 
                 Console.ReadKey();
 

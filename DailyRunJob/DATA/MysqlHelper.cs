@@ -534,7 +534,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 
-		public void GetPf_PPFTransaction(int folioId, IList<pf> pftran,AssetType type)
+		public void GetPf_PPFTransaction(int folioId, IList<PFAccount> pftran,AssetType type)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
@@ -544,12 +544,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 				while (reader.Read())
 				{
-					pftran.Add(new pf(){  
-						dtOfChange = Convert.ToDateTime(reader["dtofchange"]),
-						empCont = Convert.ToDouble(reader["emp"]),
-						emplyrCont= Convert.ToDouble(reader["employer"]),
-						pension= Convert.ToDouble(reader["pension"]),
-						type= reader["typeofcredit"].ToString()
+					pftran.Add(new PFAccount(){  
+						DateOfTransaction = Convert.ToDateTime(reader["dtofchange"]),
+						InvestmentEmp = Convert.ToDouble(reader["emp"]),
+						InvestmentEmplr= Convert.ToDouble(reader["employer"]),
+						Pension= Convert.ToDouble(reader["pension"]),
+						TypeOfTransaction= Enum.Parse<TranType>(reader["typeofcredit"].ToString())
 					});			
 				}
 			}

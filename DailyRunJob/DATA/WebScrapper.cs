@@ -29,8 +29,10 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		const string _mc = "https://www.moneycontrol.com/india/stockpricequote/";
 		const string _bondPrice = "https://www.nseindia.com/market-data/bonds-traded-in-capital-market";
 		const string _nseBondPriceLink ="https://www.nseindia.com/get-quotes/bonds?symbol=";
+		const string _bondFrequencyPriceLink = "https://www.indiabondinfo.nsdl.com/bds-web/homePortal.do?action=searchDtls&isinno=";
 		//Specific to MF INDIA NAMING CONVENTION
 		const string _idfcMfCBF = "IDFC Corporate Bond Fund - Direct Growth";
+		const string _idfcMfNiftyMF = "IDFC Nifty 50 Index Fund-Direct Plan-Growth";
 		const string _idfcMfMRF = "IDFC Bond Fund - Medium Term Plan-Direct Plan-Growth";
 		const string _idfcMfCRF = "IDFC Credit Risk Fund-Direct Plan-Growth";
 		const string _bondSymbol = "NHAI,NHIT,IRFC,PFC";
@@ -61,6 +63,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			if (string.IsNullOrEmpty(eq.sourceurl))
 			{
 				return false;
+
 			}
 			
 			try
@@ -87,7 +90,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				Thread.Sleep(1000);
 				var fundS = fundSize[1].Text;
 				eq.MarketCap= Convert.ToDouble(fundS.Substring(1, fundS.Length-3));
-				
+				eq.lastUpdated = DateTime.Now;
 				Thread.Sleep(100);
 				//Dispose();
 				return true;
@@ -185,11 +188,15 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			//GetBonusDetailsFromBse(div);
 			
 			var divAndBonusRows = _driver.FindElements(By.TagName("tr"));
-			int topRows = 4;
+			int rowCount = 5;
 			foreach(IWebElement row in divAndBonusRows)
 			{
-				if (topRows <= 0)
-					break;
+				if (divAndBonusRows.Count  >= rowCount)
+				{
+					rowCount++;
+					continue;
+				}
+					
 				dividend div = new dividend();
 				div.companyid = e.assetId;
 				var cell=row.FindElements(By.TagName("td"));
@@ -217,7 +224,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						div.lastCrawledDate = DateTime.Parse(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 						component.getMySqlObj().ReplaceDividendDetails(div);
 					}
-					topRows--;
+					rowCount++;
 				}
 				 
 				
@@ -360,8 +367,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 			else
 			{
-				_webScrapperUrl = "https://www.amfiindia.com/net-asset-value/nav-history";
-				//GetHistoricalMFPrice(name, month, year);
+				_webScrapperUrl = "https://www.amfiindia.com/net-asset-value/nav-history";				
 				Dictionary<int,double> price= new Dictionary<int, double>();
 				// This is a webscrapper
 				price.Add(month, GetHistoricalMFPrice(name, month, year));
@@ -486,7 +492,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						sub = name.Substring(0, length);
 						input[0].Clear();
 						input[0].SendKeys(sub);
-						Thread.Sleep(2500);
+						Thread.Sleep(500);
 						suggest = _driver.FindElements(By.XPath("//*[@id='suggest']/ul/li/a"));
 					}
 					else
@@ -494,17 +500,17 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					
 				}
 				suggest[0].Click();
-				Thread.Sleep(2500);
+				Thread.Sleep(1500);
 				_driver.FindElement(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[5]/div[2]/div[6]/table/tbody/tr/td[3]/form/div[4]/select[1]/option[12]")).Click();
-				Thread.Sleep(2500);
+				Thread.Sleep(1500);
 				IWebElement selYear= _driver.FindElement(By.XPath("//select[@name='mth_to_yr']"));
 				SelectElement el = new SelectElement(selYear);
 				el.SelectByValue(year.ToString());
-				Thread.Sleep(3000);
+				Thread.Sleep(1500);
 				IWebElement selFrmYear = _driver.FindElement(By.XPath("//select[@name='mth_frm_yr']"));
 				SelectElement elFrm = new SelectElement(selFrmYear);
 				elFrm.SelectByValue(year.ToString());
-				Thread.Sleep(3000);
+				Thread.Sleep(1500);
 
 				IList <IWebElement> button = _driver.FindElements(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[5]/div[2]/div[6]/table/tbody/tr/td[3]/form/div[4]/input[1]"));
 				// Need to add month and year here
@@ -542,17 +548,19 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		{
 			if (DBSavedMFName.Contains("IDFC Corporate"))
 				return _idfcMfCBF;
-			if (DBSavedMFName.Contains("IDFC Credit"))
+			else if (DBSavedMFName.Contains("IDFC nifty"))
+				return _idfcMfNiftyMF;
+			else if (DBSavedMFName.Contains("IDFC Credit"))
 				return _idfcMfCRF;
-			if (DBSavedMFName.Contains("IDFC Bond"))
+			else if (DBSavedMFName.Contains("IDFC Bond"))
 				return _idfcMfCRF;
-			if (DBSavedMFName.Contains("Axis Long"))
+			else if (DBSavedMFName.Contains("Axis Long"))
 				return "Axis Long Term Equity Fund - Direct Plan - Growth Option";
-			if (DBSavedMFName.Contains("Kotak Corporate"))
+			else if (DBSavedMFName.Contains("Kotak Corporate"))
 				return "Kotak Corporate Bond Fund- Direct Plan- Growth Option";
-			if (DBSavedMFName.Contains("SBI Long"))
+			else if (DBSavedMFName.Contains("SBI Long"))
 				return "SBI LONG TERM ADVANTAGE FUND - SERIES I - DIRECT PLAN - GROWTH";
-			return "";
+			return DBSavedMFName;
 		}
 		private double GetHistoricalMFPrice(string name, int month, int year)
 		{
@@ -617,10 +625,10 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				tableRow[9].Click();
 				 
 				//IWebElement dayStart = _driver.FindElement(By.XPath("//tr[@id='trToDate']/div/input[1]"));
-				tableRow[9].SendKeys("22-Jun-2022");
+				tableRow[9].SendKeys("22-"+getMonth(month)+"-"+year);
 				//dayStart.SendKeys("25");
 				tableRow[10].Click();
-				tableRow[10].SendKeys("25-Jun-2022");
+				tableRow[10].SendKeys("25-"+getMonth(month)+"-"+year);
 				//IWebElement monthStart = _driver.FindElement(By.XPath("//*[@id='fromDate']/div/input[2]"));
 				//monthStart.SendKeys(month.ToString());
 				//IWebElement yrStart = _driver.FindElement(By.XPath("//*[@id='fromDate']/div/input[3]"));
@@ -845,13 +853,10 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		{
 			try
 			{
-				//Dispose();
-				//Thread.Sleep(4000);
-				//GetChromeINstance();
 				_driver.Navigate().GoToUrl(_bondPrice);
 				Thread.Sleep(8600);
 				WebDriverWait wait = new WebDriverWait(_driver,  TimeSpan.FromSeconds(25));
-				//Thread.Sleep(8500);
+				
 				IList<IWebElement> listOfBonds =_driver.FindElements(By.XPath("//table[@id='liveTCMTable']/tbody/tr"));
 				foreach(IWebElement ele in listOfBonds)
 				{
@@ -892,6 +897,71 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				//Dispose();
 			}
+		}
+
+		public void GetBondFrequency(Bond b)
+		{
+			_driver.Navigate().GoToUrl(_bondFrequencyPriceLink+b.BondId);
+			Thread.Sleep(5000);
+			WebDriverWait wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(25));
+
+			IList<IWebElement> listOfBonds = _driver.FindElements(By.XPath("//h3/span"));
+			listOfBonds[0].Click();
+
+		}
+		public string getMonth(int mnth)
+		{
+			string month = string.Empty;
+			switch (mnth)
+			{
+				case 1:
+					month = "Jan";
+					break;
+
+				case 2:
+					month = "Feb";
+					break;
+
+				case 3:
+					month = "Mar";
+					break;
+
+				case 4:
+					month = "Apr";
+					break;
+
+				case 5:
+					month = "May";
+					break;
+
+				case 6:
+					month = "Jun";
+					break;
+				case 7:
+					month = "Jul";
+					break;
+
+				case 8:
+					month = "Aug";
+					break;
+
+				case 9:
+					month = "Sep";
+					break;
+
+				case 10:
+					month = "Oct";
+					break;
+
+				case 11:
+					month = "Nov";
+					break;
+
+				case 12:
+					month = "Dec";
+					break;
+			}
+			return month;
 		}
 	}
 }

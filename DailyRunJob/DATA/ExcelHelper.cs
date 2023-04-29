@@ -30,7 +30,7 @@ namespace Equity
 
 	    string EQUITY_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
 
-		public string BOND_FILE_PATH = @"C:\Users\fillic\Downloads\All.csv";//ConfigurationManager.AppSettings["BOND_FILE_PATH"];	
+		public string BOND_FILE_PATH = @"C:\Users\fillic\Downloads\SECURITY_LIST_DETAILS.csv";//ConfigurationManager.AppSettings["BOND_FILE_PATH"];	
 		public static string BOND_LIVE_PRICE = @"C:\Users\fillic\Downloads\MW-Bonds-on-CM-"+ DateTime.Now.ToString("dd-MMM-yyyy")+".csv";//ConfigurationManager.AppSettings["BOND_FILE_PATH"];
 
 		public static Dictionary<string,int> bondColumnName;
@@ -40,18 +40,19 @@ namespace Equity
 		public ExcelHelper()
 		{
 			bondColumnName = new Dictionary<string, int>();
-			bondColumnName.TryAdd("Issuer Name", 0);
-			bondColumnName.TryAdd("ISIN Code", 0);
-			bondColumnName.TryAdd("Allotment date", 0);
-			bondColumnName.TryAdd("Maturity date", 0);
-			bondColumnName.TryAdd("Face Value (Rs.)", 0);
-			bondColumnName.TryAdd("Next IP Date", 0);
-			bondColumnName.TryAdd("Coupon Frequency", 0);
+			bondColumnName.TryAdd("Name of Issuer", 2);
+			bondColumnName.TryAdd("ISIN", 1);
+			bondColumnName.TryAdd("Date of Allotment", 10);
+			bondColumnName.TryAdd("Date of Redemption/Conversion", 11);
+			bondColumnName.TryAdd("Face Value (In Rs.)", 8);
+			bondColumnName.TryAdd("Frequency of Interest Payment", 14);
+			bondColumnName.TryAdd("Coupon Rate (%)", 12);
 			bondColumnName.TryAdd("Credit Ratings Agency (Multiple)", 0);
-			bondColumnName.TryAdd("Rating (Multiple)", 0);
-			bondColumnName.Add("Coupon Rate(IP rate)", 0);
+			bondColumnName.TryAdd("Credit Rating", 15);
+			bondColumnName.Add("Instrument Status", 0);
 			bondColumnName.Add("First IP date", 0);
-
+			bondColumnName.Add("Security Description", 4);
+			 
 			bondLivePriceMapping = new Dictionary<string, int>();
 			bondLivePriceMapping.TryAdd("SYMBOL", 0);
 			bondLivePriceMapping.TryAdd("SERIES", 1);
