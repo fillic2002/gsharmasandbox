@@ -11,10 +11,13 @@ using TinyCsvParser;
 
 namespace Git_Sandbox.DailyRunJob
 {
-	public static class excelhelpernew
+    
+	public class excelhelpernew
 	{
-       public static void ReadExcelFile()
+        public string fileName;
+       public void ReadExcelFile()
         {
+            fileName = @"C:\Users\fillic\Downloads\EQUITY_L.CSV";
             CsvParserOptions csvParserOptions = new CsvParserOptions(true, ',');
             CsvUserDetailsMapping csvMapper = new CsvUserDetailsMapping();
             CsvParser<EquityBase> csvParser = new CsvParser<EquityBase>(csvParserOptions, csvMapper);

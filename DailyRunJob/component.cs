@@ -20,9 +20,22 @@ namespace Git_Sandbox.DailyRunJob
 		static api.mysqlContext _sqlContext;
 		static BondsHelper _bondObject;
 		static api.BondsContext _bondContext;
+
+		// Borrowed from Myfin binary
 		static business.BondsHelper _bondBusinessHelper;
 		static business.Equity _equityBusinessHelper;
+		static business.PortfoliMgmt _portfolioHelper;
+		
+		static Git_Sandbox.DailyRunJob.Business.Expense _expenselHelper;
+		
 
+		public static business.PortfoliMgmt getPortfolioHelperObj()
+		{
+			if (_portfolioHelper == null)
+				_portfolioHelper = new business.PortfoliMgmt();
+
+			return _portfolioHelper;
+		}
 		public static business.Equity getEquityBusinessHelperObj()
 		{
 			if (_equityBusinessHelper == null)
@@ -92,6 +105,13 @@ namespace Git_Sandbox.DailyRunJob
 				_excelHelper = new ExcelHelper();
 
 			return _excelHelper;
+		}
+		public static Expense getExpenseHelperObj()
+		{
+			if (_expenselHelper == null)
+				_expenselHelper = new Expense();
+
+			return _expenselHelper;
 		}
 
 	}

@@ -7,6 +7,13 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml.Packaging;
+using Git_Sandbox.DailyRunJob;
+using Git_Sandbox.DailyRunJob.Business;
+using Microsoft.VisualBasic.FileIO;
+using myfinAPI.Model;
+using myfinAPI.Model.Domain;
+using myfinAPI.Model.DTO;
+using TinyCsvParser;
 //using Microsoft.Office.Interop.Excel;
 //using OfficeOpenXml;
 //using Range = Microsoft.Office.Interop.Excel.Range;
@@ -36,6 +43,10 @@ namespace Equity
 		public static Dictionary<string,int> bondColumnName;
 		public static Dictionary<string, int> bondLivePriceMapping;
 
+		string filePath = @"C:\Users\fillic\Downloads\OpTransactionHistoryTpr21-05-2023.csv";
+
+		// Create a list to store the data
+		List<string[]> csvData = new List<string[]>();
 
 		public ExcelHelper()
 		{
@@ -59,7 +70,6 @@ namespace Equity
 			bondLivePriceMapping.TryAdd("LTP", 5);
 
 		}
-
 
 
 		///// <summary>
@@ -268,8 +278,6 @@ namespace Equity
 			}
 			return month;
 		}
-		
-
 		public void ReadBondData(IList<string> data,string filePath, Dictionary<string, int> mapping)
 		{
 			string[] lines = File.ReadAllLines(filePath);	 
@@ -342,16 +350,71 @@ namespace Equity
 			return sharePrice;
 		}
 
-			//	return CompanysValuation;
+		//	return CompanysValuation;
 
-			//}
-			//public void CloseExcel()
-			//{
-			//	ExcelApp.Quit();
-			//}
+		//}
+		//public void CloseExcel()
+		//{
+		//	ExcelApp.Quit();
+		//}
 
+		public void ReadExpenseDetails()
+		{
+			using (TextFieldParser parser = new TextFieldParser(filePath))
+			{
+				parser.TextFieldType = FieldType.Delimited;
+				parser.SetDelimiters(",");
+
+				while (!parser.EndOfData)
+				{
+					string[] fields = parser.ReadFields();
+					csvData.Add(fields);
+				}
+			}
+			bool flagStart = false;
+			ExpenseDTO expenseDto;
+			int folioID =0;
+			// Process the data as needed
+			foreach (string[] row in csvData)
+			{
+				if (row[1].Contains("Account Number") )
+				{
+					if (row[3].Contains("GAURAV"))
+						folioID = 2;
+					else if (row[3].Contains("RENUKA"))
+						folioID = 1;
+				}
+				if (row[1].Contains("S No.") && flagStart==false)
+				{
+					flagStart = true;
+					foreach (string field in row)
+					{
+						// Do something with each field in the row
+						Console.WriteLine(field)							;
+						
+					}
+					continue;
+				}
+				if(flagStart  && Convert.ToDouble(row[6]) >0)
+				{
+					expenseDto = new ExpenseDTO();
+					expenseDto.amt = Convert.ToDouble(row[6]);
+					expenseDto.dtOfTran = Convert.ToDateTime(row[3]);
+					expenseDto.folioId = folioID;
+					expenseDto.desc = row[5];
+					expenseDto.expenseType = myfinAPI.Model.DTO.ExpenseType.UPI;
+					component.getPortfolioHelperObj().AddExpense(expenseDto);
+				}
+
+			}
 
 		}
+
+		public static implicit operator ExcelHelper(Expense v)
+		{
+			throw new NotImplementedException();
+		}
+	}
 
 	public static class Extensions
 	{

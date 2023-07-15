@@ -191,7 +191,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			int rowCount = 5;
 			foreach(IWebElement row in divAndBonusRows)
 			{
-				if (divAndBonusRows.Count  >= rowCount)
+				if (divAndBonusRows.Count  >= rowCount+10) // last 10 records
 				{
 					rowCount++;
 					continue;
@@ -202,12 +202,18 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				var cell=row.FindElements(By.TagName("td"));
 				if(cell.Count>=10 && cell.Count<13)
 				{
-					//Console.WriteLine(cell[3].Text);
 					if(cell[3].Text.Contains("Dividend"))
 					{
 						string divi = cell[3].Text.Substring(cell[3].Text.IndexOf("Rs")+6,4);
-							
-						div.creditType = TypeOfCredit.Dividend;
+						if(cell[3].Text.Contains("Special"))
+							div.creditType = TypeOfCredit.SpclDividend;
+						else if(cell[3].Text.Contains("Final"))
+							div.creditType = TypeOfCredit.FDividend;
+						else if (cell[3].Text.Contains("Interim"))
+							div.creditType = TypeOfCredit.IntDividend;
+						else 
+							div.creditType = TypeOfCredit.IntDividend;
+
 						div.value = Convert.ToDouble(divi);
 						div.dtUpdated = Convert.ToDateTime(cell[2].Text);
 						div.lastCrawledDate = DateTime.Parse(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
@@ -672,7 +678,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			var dtt = _driver.FindElements(By.XPath("//*[@id='tblinsidertrd']/tbody/tr[" + yr + "]/td[3]"))[0].Text;
 			item.dtUpdated = Convert.ToDateTime(dtt);
 			item.value = Convert.ToDouble(data);
-			item.creditType = TypeOfCredit.Dividend;
+			item.creditType = TypeOfCredit.FDividend;
 		}
 		private void GetBonusDetailsFromBse(dividend item)
 		{

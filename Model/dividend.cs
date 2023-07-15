@@ -15,7 +15,10 @@ namespace Git_Sandbox.Model
 
 	public enum TypeOfCredit
 	{
-		Dividend =1,
-		Bonus=2
+		IntDividend =1,
+		Bonus=2,
+		SpclDividend=3,
+		FDividend=4
+
 	}
 }

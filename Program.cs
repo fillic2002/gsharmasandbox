@@ -20,8 +20,9 @@ namespace Git_Sandbox
                 //Update any missing URL
                 // obj.UpdateCompanyDetails();
 
-             // component.getBondsObj().LoadBondDetails();
-                
+                // component.getBondsObj().LoadBondDetails();
+
+                component.getExpenseHelperObj().getExpense();
                //Update Shares latest NAV -Daily
                obj.UpdateEquityLiveData();		
 
@@ -34,9 +35,11 @@ namespace Git_Sandbox
                
                obj.UpdatePPFSnapshot();
                
-                obj.UpdateAssetHistory();
+               obj.UpdateAssetHistory();
 
-                _webHelper.GetProcurementDetails();
+               _webHelper.GetProcurementDetails();
+
+
 
                 Console.ReadKey();
             

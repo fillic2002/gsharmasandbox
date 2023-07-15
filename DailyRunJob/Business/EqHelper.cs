@@ -56,6 +56,7 @@ namespace DailyRunEquity
 		{
 			List<EquityTransaction> eqTran = new List<EquityTransaction>();
 			component.getMySqlObj().GetTransactions(eqTran, 0);
+
 			List<EquityTransaction> res = eqTran.FindAll(x => (x.equity.PB ==0 || x.equity.MarketCap==0) && x.equity.assetType==AssetType.Shares 
 							&& DateTime.Now.Subtract(x.tranDate).TotalDays <= 30);
 			foreach(EquityTransaction et in res)
@@ -64,6 +65,7 @@ namespace DailyRunEquity
 				component.getWebScrappertObj().GetDividendAndTotalShare(d,et.equity,"PB");
 				et.equity.PB = (et.equity.PB / et.equity.livePrice) * et.price;
 				et.equity.MarketCap = (et.equity.MarketCap / et.equity.livePrice) * et.price;
+				et.verified = true;
 				component.getMySqlObj().UpdateTransaction(et);				
 			}			
 		}
@@ -135,7 +137,8 @@ namespace DailyRunEquity
 		}
 		public void ReadNewExcel()
 		{
-			excelhelpernew.ReadExcelFile();
+			//component.getExcelHelperObj().
+			
 		}
 		async Task<EquityBase> ProcessUrlAsync(EquityBase item)
 		{
@@ -266,12 +269,16 @@ namespace DailyRunEquity
 			{
 				try
 				{
-					//Console.WriteLine("Getting Dividend detail from DB for Company ID:" + comp.companyid);
 					component.getMySqlObj().getLastDividendOfCompany(comp);
-					if (DateTime.UtcNow.Subtract(comp.lastCrawledDate).TotalDays >= 30)
+					if (DateTime.UtcNow.Subtract(comp.dtUpdated).TotalDays >=90 &&
+						DateTime.UtcNow.Subtract(comp.lastCrawledDate).TotalDays> 7)
 					{
-						Console.WriteLine("Dividend Detail need Fresh from BSE:" + comp.companyid);
-						component.getWebScrappertObj().GetEquityDivAndBonusDetail(comp, Listurl.First<EquityBase>(x => x.assetId == comp.companyid), "Dividend");
+						//if (comp.companyid == "INE140A01024")
+						//{				 
+
+							Console.WriteLine("Dividend Detail need Fresh from BSE:" + comp.companyid);
+							component.getWebScrappertObj().GetEquityDivAndBonusDetail(comp, Listurl.First<EquityBase>(x => x.assetId == comp.companyid), "Dividend");
+						//}
 					}
 				}
 				catch(Exception ex)
@@ -356,30 +363,19 @@ namespace DailyRunEquity
 			try
 			{
 				 
-				foreach (BondTransaction tran in bondTran.Where(x=>x.purchaseDate.Month==m && x.purchaseDate.Year==year))
+				foreach (BondTransaction tran in bondTran)
 				{
-					//IList<BondIntrest> bondIntrest = new List<BondIntrest>();
-					//component.getBondBusinessHelperObj().getyYearlyIntrest(tran, new DateTime(year, m, DateTime.DaysInMonth(year, m)), bondIntrest);
-					//IOrderedEnumerable<BondIntrestYearly> intr = component.getBondBusinessHelperObj().GetMonthlyBondIntrest(year, p.folioId);
-					//if (intr.Count() > 0)
-					//{
-					//	if(intr.Where(x => x.month == m).Count()>0)
-					//	{
-					//		_pevMonthSnapshot.Dividend += intr.First(x => x.month == m).Intrest;
-					//	}
-					//}
-						
-
-					//if (tran.purchaseDate.Month == m && tran.purchaseDate.Year == year)
-					//{
+					if (tran.purchaseDate.Month == m && tran.purchaseDate.Year == year)
+					{
 						_pevMonthSnapshot.Investment += tran.InvstPrice * tran.Qty + tran.AccuredIntrest;
 						_pevMonthSnapshot.AssetValue += tran.BondDetail.LivePrice * tran.Qty;
-					//}
+					}
+					if(tran.BondDetail.dateOfMaturity.Month == m && tran.BondDetail.dateOfMaturity.Year == year)
+					{
+						_pevMonthSnapshot.Investment -= tran.InvstPrice * tran.Qty + tran.AccuredIntrest;
+						_pevMonthSnapshot.AssetValue -= tran.BondDetail.LivePrice * tran.Qty;
+					}
 
-					//if (_pevMonthSnapshot.Dividend > 0)
-					//{
-					//	string s = "Got the dividend";
-					//}
 				}
 			}
 			catch(Exception ex)
