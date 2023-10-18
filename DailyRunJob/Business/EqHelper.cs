@@ -47,27 +47,34 @@ namespace DailyRunEquity
 			folioDetail = new List<Portfolio>();
 			component.getMySqlObj().GetPortFolio(folioDetail);
 
-			equity = component.getMySqlObj().GetEquityNavUrl();
+			component.getMySqlObj().GetEquityDetails(equity);
 			_eqHistory = new List<equityHistory>();
 			_previousMonthSnapshot = new Dictionary<string, AssetHistory>();
 			
 		}
-		public void AddPbAndMarketCap()
+		public void AddTransactionPbAndMarketCap()
 		{
 			List<EquityTransaction> eqTran = new List<EquityTransaction>();
 			component.getMySqlObj().GetTransactions(eqTran, 0);
-
-			List<EquityTransaction> res = eqTran.FindAll(x => (x.equity.PB ==0 || x.equity.MarketCap==0) && x.equity.assetType==AssetType.Shares 
-							&& DateTime.Now.Subtract(x.tranDate).TotalDays <= 30);
-			foreach(EquityTransaction et in res)
+			try
 			{
-				dividend d = new dividend();
-				component.getWebScrappertObj().GetDividendAndTotalShare(d,et.equity,"PB");
-				et.equity.PB = (et.equity.PB / et.equity.livePrice) * et.price;
-				et.equity.MarketCap = (et.equity.MarketCap / et.equity.livePrice) * et.price;
-				et.verified = true;
-				component.getMySqlObj().UpdateTransaction(et);				
-			}			
+				List<EquityTransaction> res = eqTran.FindAll(x => (x.PB_Tran == 0 || x.MarketCap_Tran== 0) && x.equity.assetType == AssetType.Shares
+								&& DateTime.Now.Subtract(x.tranDate).TotalDays <= 30);
+				foreach (EquityTransaction et in res)
+				{
+			 
+					//dividend d = new dividend();
+					//component.getWebScrappertObj().GetDividendAndTotalShare(d, et.equity, "PB");
+					et.PB_Tran = (et.equity.PB / et.equity.livePrice) * et.price;
+					et.MarketCap_Tran = (et.equity.MarketCap / et.equity.livePrice) * et.price;
+					et.verified = true;
+					component.getMySqlObj().UpdateTransaction(et);
+				}
+			}
+			catch(Exception ex )
+			{
+				Console.WriteLine("AddPbAndMarketCap::"+ ex.Message);
+			}
 		}
 		/// <summary>
 		/// This function is going to get live NAV for the shares and update in the db table
@@ -76,59 +83,70 @@ namespace DailyRunEquity
 		public async Task UpdateEquityLiveData()
 		{
 			var stopwatch = Stopwatch.StartNew();
-			IEnumerable<Task<EquityBase>> downloadTasksQuery =
-				   from item in equity
-				   select ProcessUrlAsync(item);
+			//IEnumerable<Task<EquityBase>> downloadTasksQuery =
+			//	   from item in equity
+			//	   select ProcessUrlAsync(item);
 
-			List<Task<EquityBase>> downloadTasks = downloadTasksQuery.ToList();
+			equity.ToList().ForEach(x=> ProcessUrl(x));
 
-			while (downloadTasks.Any())
-			{
+			//RecordMonthlyAssetPrice(data);
+			//Console.WriteLine("Delay Start");
+			//Task.Delay(10000).Wait();
+			//Console.WriteLine("Delay end");
+
+			//component.getWebCrawlController().StartCrawlingAsync();
+			//List<Task<EquityBase>> downloadTasks = downloadTasksQuery.ToList();
+
+			//while (downloadTasks.Any())
+			//Thread.Sleep(100000);
+			if (DateTime.Now.Day >= 20)
+				equity.ToList().ForEach(x => RecordMonthlyAssetPrice(x));
+//			{
 				try
 				{
-					Task<EquityBase> finishedTask = await Task.WhenAny(downloadTasks);
-					downloadTasks.Remove(finishedTask);
-					if (finishedTask.Status != TaskStatus.Faulted && finishedTask.Result!=null)
-					{
-						//Console.WriteLine("DB Update::" + finishedTask.Result.equityName+ " IS ::"+component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
-						//Thread.Sleep(100);
-						RecordMonthlyAssetPrice(finishedTask.Result);
-					}
-				}
+			//	RecordMonthlyAssetPrice(data);
+				//	Task<EquityBase> finishedTask = await Task.WhenAny(downloadTasks);
+				//	downloadTasks.Remove(finishedTask);
+				//	if (finishedTask.Status != TaskStatus.Faulted && finishedTask.Result!=null)
+				//	{
+				//Console.WriteLine("DB Update::" + finishedTask.Result.equityName+ " IS ::"+component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
+				//Thread.Sleep(100);
+				//		RecordMonthlyAssetPrice(finishedTask.Result);
+				//	}
+			}
 				catch(Exception ex)
 				{
 					string s = ex.StackTrace;
-					continue;
+					//continue;
 				}
-			}
+			//}
 			stopwatch.Stop();
 			Console.WriteLine($"Elapsed time:          {stopwatch.Elapsed}\n");
 			Console.WriteLine("Saved all records:" + DateTime.Now.ToString("hh.mm.ss.ffffff"));
+			//Console.Read();
 
 		}
-
 		private void RecordMonthlyAssetPrice(EquityBase eq)
 		{
 			try
 			{
-				if (DateTime.Now.Day >= 20)
+				if (component.getMySqlObj().GetHistoricalSharePrice(eq.assetId, DateTime.Now.Month, DateTime.Now.Year) > 0)
 				{
-					if (component.getMySqlObj().GetHistoricalSharePrice(eq.assetId, DateTime.Now.Month, DateTime.Now.Year) > 0)
-					{
-						Console.WriteLine("Current Month Price already present for: " + eq.equityName);
-					}
-					else
-					{
-						component.getMySqlObj().UpdateEquityMonthlyPrice(new equityHistory()
-						{
-							equityid = eq.assetId,
-							month = DateTime.Now.Month,
-							price = eq.livePrice,
-							year = DateTime.Now.Year,
-							assetType = Convert.ToInt32(eq.assetType)
-						});
-					}
+					Console.WriteLine("Current Month Price already present for: " + eq.equityName);
 				}
+				else
+				{
+					component.getMySqlObj().UpdateEquityMonthlyPrice(eq,DateTime.UtcNow.Month, DateTime.UtcNow.Year);
+					//component.getMySqlObj().UpdateEquityMonthlyPrice(new equityHistory()
+					//{
+					//	equityid = eq.assetId,
+					//	month = DateTime.Now.Month,
+					//	price = eq.livePrice,
+					//	year = DateTime.Now.Year,
+					//	assetType = Convert.ToInt32(eq.assetType),						
+
+					//});
+				}	
 			}
 			catch(Exception e)
 			{
@@ -140,32 +158,48 @@ namespace DailyRunEquity
 			//component.getExcelHelperObj().
 			
 		}
-		async Task<EquityBase> ProcessUrlAsync(EquityBase item)
+		public void ProcessUrl(EquityBase item)
 		{
 			try
 			{			
-				component.getMySqlObj().GetCompanyDetails(item);
-				if (item.lastUpdated <= DateTime.UtcNow.AddMinutes(-200) || item.livePrice==0)
+				//component.getMySqlObj().GetCompanyDetails(item);
+				if (item.lastUpdated <= DateTime.UtcNow.AddMinutes(-100) || item.livePrice==0)
 				{
-					if (item.assetType == AssetType.Shares)
+					if (item.assetType ==AssetType.Shares)
 					{
-						await component.getWebScrappertObj().GetEquityDetails(item);
+						if (String.IsNullOrEmpty(item.divUrl))
+						{
+							Console.WriteLine("DivURL empty :: " + item.equityName);
+							return;
+						}
+						//if (item.assetId == "INE860A01027")
+						//	{
+						//component.getWebCrawlController().AddToCrawlQueue(item);
+						_ = component.getWebScrappertObj().GetEquityDetails(item);						
+						component.getMySqlObj().UpdateLatesNAV(item);
+
+					}
+					else if ((item.assetType == AssetType.Equity_MF || item.assetType == AssetType.Debt_MF)) 
+					{
+						//component.getWebCrawlController().AddToCrawlQueue(item);
+						_ = component.getWebScrappertObj().GetMFDetails(item);
 						component.getMySqlObj().UpdateLatesNAV(item);
 					}
-					else if(item.lastUpdated < DateTime.UtcNow.AddDays(-1) )
-					{
-						await component.getWebScrappertObj().GetMFDetails(item);
-						component.getMySqlObj().UpdateLatesNAV(item);
-					}
-					else
-					{
-						return null;
-					}
-					//component.getMySqlObj().UpdateLatesNAV(item);
-					//Thread.Sleep(100);
-					return item;
+
+					//}
+					//else if((item.assetType==AssetType.Equity_MF || item.assetType == AssetType.Debt_MF) &&
+					//	item.lastUpdated < DateTime.UtcNow.AddMinutes(-1) )
+					//{
+					//	component.getWebScrappertObj().GetMFDetails(item);
+					//	component.getMySqlObj().UpdateLatesNAV(item);
+						
+					//}
+					//else
+					//{
+					
+					//}				
 				}
-				return null;
+				
 			}
 			catch(Exception ex)
 			{
@@ -173,7 +207,11 @@ namespace DailyRunEquity
 				Console.Write("Error in fetching LiveData:" + item.equityName);
 				Console.Write(ex.Message);
 
-				return item;
+			//	return item;
+			}
+			finally
+			{
+				//Task.Delay(100).Wait();
 			}
 		}
 
@@ -202,50 +240,54 @@ namespace DailyRunEquity
 			component.getEquityBusinessHelperObj().GetAllTransaction(0, eqtTrans);
 			component.getMySqlObj().getDividendDetails(dividendDetails);
 			Dictionary<string, int> tempBonus = new Dictionary<string, int>();
-			foreach (dividend comp in dividendDetails.Where(x=>x.dtUpdated >= DateTime.Now.AddYears(-10) && x.creditType==TypeOfCredit.Bonus))
+			try
 			{
-				//Get Bonus split
-				string[] bonusSplit = comp.value.ToString().Split('.');
-				
-				var result= eqtTrans.Where(x => x.equity.assetId == comp.companyid && x.tranDate <= comp.dtUpdated);
-				//Check for transaction
-				for(int folioId=1; folioId <= 5; folioId++ )
+				foreach (dividend comp in dividendDetails.Where(x => x.dtUpdated >= DateTime.Now.AddYears(-10) && x.creditType == TypeOfCredit.Bonus))
 				{
-					int totoalEquityCount=Convert.ToInt32(CalculateHolding(result.Where(x => x.portfolioId == folioId), 
-						folioId,comp.dtUpdated));
-					
-					var bonusQuantity = totoalEquityCount * Convert.ToInt32(bonusSplit[0]) / Convert.ToInt32(bonusSplit[1]);
+					//Get Bonus split
+					string[] bonusSplit = comp.value.ToString().Split('.');
 
-					var match = result.Where(x => x.tranDate == comp.dtUpdated && x.tranType == TranType.Bonus && x.portfolioId==folioId);
-					//Check if bonus already added
-					if (match.ToArray().Length > 0)
+					var result = eqtTrans.Where(x => x.equity.assetId == comp.companyid && x.tranDate <= comp.dtUpdated);
+					//Check for transaction
+					for (int folioId = 1; folioId <= 5; folioId++)
 					{
-						continue;
-					}
+						int totoalEquityCount = Convert.ToInt32(CalculateHolding(result.Where(x => x.portfolioId == folioId),
+							folioId, comp.dtUpdated));
 
-					if (totoalEquityCount > 0)
-					{	
-						eqtTran.equity= new EquityBase() { assetId = comp.companyid };
-						eqtTran.price = 0;
-						eqtTran.tranType = TranType.Bonus;
-						eqtTran.portfolioId = folioId;
-						eqtTran.qty = bonusQuantity;
-						eqtTran.tranDate = comp.dtUpdated;
-						component.getEquityBusinessHelperObj().AddEqtyTransaction(eqtTran);
-						eqtTrans.Add(eqtTran);
-						Console.WriteLine("BONUS ADDED FOR::"+ comp.companyid);
-					}
-				}			
+						var bonusQuantity = totoalEquityCount * Convert.ToInt32(bonusSplit[0]) / Convert.ToInt32(bonusSplit[1]);
 
-				//Add new bonus share
-				//component.getEquityBusinessHelperObj().AddEqtyTransaction(eqtTran);
-				
+						var match = result.Where(x => x.tranDate == comp.dtUpdated && x.tranType == TranType.Bonus && x.portfolioId == folioId);
+						//Check if bonus already added
+						if (match.ToArray().Length > 0)
+						{
+							continue;
+						}
+
+						if (totoalEquityCount > 0)
+						{
+							eqtTran.equity = new EquityBase() { assetId = comp.companyid };
+							eqtTran.price = 0;
+							eqtTran.tranType = TranType.Bonus;
+							eqtTran.portfolioId = folioId;
+							eqtTran.qty = bonusQuantity;
+							eqtTran.tranDate = comp.dtUpdated;
+							component.getEquityBusinessHelperObj().AddEqtyTransaction(eqtTran);
+							eqtTrans.Add(eqtTran);
+							Console.WriteLine("BONUS ADDED FOR::" + comp.companyid);
+						}
+					}
+				}
 			}
-	
+			catch (Exception ex)
+			{
+				Console.WriteLine("AddBonusTransaction::"+ ex.Message);
+			}
+			//Add new bonus share
+			//component.getEquityBusinessHelperObj().AddEqtyTransaction(eqtTran);
 		}
-		private double CalculateHolding(IEnumerable<EquityTransaction> tran,int folioId,DateTime bonusDate)
+		private decimal CalculateHolding(IEnumerable<EquityTransaction> tran,int folioId,DateTime bonusDate)
 		{
-			double equityCount = 0;
+			decimal equityCount = 0;
 			foreach(EquityTransaction t in tran)
 			{
 				if (t.tranType == TranType.Buy|| (t.tranType==TranType.Bonus && t.tranDate != bonusDate))
@@ -255,7 +297,6 @@ namespace DailyRunEquity
 			}
 			return equityCount;
 		}
-
 		public void AddDividendDetails()
 		{
 			IList<dividend> listCompanies = new List<dividend>();
@@ -269,19 +310,20 @@ namespace DailyRunEquity
 			{
 				try
 				{
-					component.getMySqlObj().getLastDividendOfCompany(comp);
-					if (DateTime.UtcNow.Subtract(comp.dtUpdated).TotalDays >=90 &&
-						DateTime.UtcNow.Subtract(comp.lastCrawledDate).TotalDays> 7)
-					{
-						//if (comp.companyid == "INE140A01024")
-						//{				 
+					//if (comp.companyid == "INE860A01027")
+					//{
+						component.getMySqlObj().getLastDividendOfCompany(comp);
+						if (DateTime.UtcNow.Subtract(comp.dtUpdated).TotalDays >= 90 &&
+							DateTime.UtcNow.Subtract(comp.lastCrawledDate).TotalDays > 7)
+						{
 
 							Console.WriteLine("Dividend Detail need Fresh from BSE:" + comp.companyid);
 							component.getWebScrappertObj().GetEquityDivAndBonusDetail(comp, Listurl.First<EquityBase>(x => x.assetId == comp.companyid), "Dividend");
-						//}
-					}
+
+						}
+					//}
 				}
-				catch(Exception ex)
+				catch (Exception ex)
 				{
 					string message = ex.StackTrace;
 					component.getWebScrappertObj().Dispose();
@@ -344,6 +386,7 @@ namespace DailyRunEquity
 		{
 		 
 			AssetHistory _pevMonthSnapshot=new AssetHistory();			 
+			
 			_pevMonthSnapshot.portfolioId = p.folioId;
 			DateTime dt = new DateTime(year, m, DateTime.DaysInMonth(year, m)).AddMonths(-1);
 			_pevMonthSnapshot.month = dt.Month;
@@ -372,8 +415,20 @@ namespace DailyRunEquity
 					}
 					if(tran.BondDetail.dateOfMaturity.Month == m && tran.BondDetail.dateOfMaturity.Year == year)
 					{
-						_pevMonthSnapshot.Investment -= tran.InvstPrice * tran.Qty + tran.AccuredIntrest;
-						_pevMonthSnapshot.AssetValue -= tran.BondDetail.LivePrice * tran.Qty;
+						if (tran.BondDetail.dateOfMaturity.Month == DateTime.UtcNow.Month &&
+							tran.BondDetail.dateOfMaturity.Year == DateTime.UtcNow.Year)
+						{
+							if(tran.BondDetail.dateOfMaturity.Day <= DateTime.UtcNow.Day)
+							{
+								_pevMonthSnapshot.Investment -= tran.InvstPrice * tran.Qty + tran.AccuredIntrest;
+								_pevMonthSnapshot.AssetValue -= tran.BondDetail.LivePrice * tran.Qty;
+							}
+						}
+						else
+						{
+							_pevMonthSnapshot.Investment -= tran.InvstPrice * tran.Qty + tran.AccuredIntrest;
+							_pevMonthSnapshot.AssetValue -= tran.BondDetail.LivePrice * tran.Qty;
+						}
 					}
 
 				}
@@ -609,22 +664,22 @@ namespace DailyRunEquity
 		{
 			if (t.Count == 0)
 				return;
-			foreach (EquityTransaction eqt in t)
+			foreach (EquityTransaction tran in t)
 			{
-				if (eqt.tranType == TranType.Buy)
+				if (tran.tranType == TranType.Buy)
 				{
-					astHistory.Investment += eqt.price * eqt.qty;
+					astHistory.Investment += tran.price * tran.qty;
 				}
 				else
 				{
-					astHistory.Investment -= eqt.price * eqt.qty;
+					astHistory.Investment -= tran.price * tran.qty;
 				}
 			}
 		}
 		//Add asset purchased during this particular month in previous month snapshot
 		private void UpdateMonthlyMFAssetValue(myfinAPI.Model.AssetHistory astHistory, IList<EquityTransaction> t, int month, int year)
 		{
-			Dictionary<string, double> qty = new Dictionary<string, double>();
+			Dictionary<string, decimal> qty = new Dictionary<string, decimal>();
 
 			myfinAPI.Model.AssetClass.AssetType typeofAsset = astHistory.Assettype;
 			astHistory.AssetValue = 0;
@@ -648,11 +703,10 @@ namespace DailyRunEquity
 			}
 			foreach (string key in qty.Keys)
 			{
-				astHistory.AssetValue += qty[key] * GetMonthPrice(key, month, year, typeofAsset);
+				astHistory.AssetValue += qty[key] * GetMonthPrice(t.First(x=>x.equity.assetId ==key).equity, month, year);
 			}
 
 		}
-
 		private void UpdateMonthlyShareSnapshot(int month, int year, Portfolio p, IList<EquityTransaction> t)
 		{
 
@@ -660,7 +714,7 @@ namespace DailyRunEquity
 				return;
 
 			AssetHistory history = new AssetHistory();
-			Dictionary<string, double> equities = new Dictionary<string, double>();			
+			Dictionary<string, decimal> equities = new Dictionary<string, decimal>();			
 			IList<Portfolio> folioDetail = new List<Portfolio>();
 
 			history.Assettype = myfinAPI.Model.AssetClass.AssetType.Shares;
@@ -674,19 +728,19 @@ namespace DailyRunEquity
 					if (eqt.tranType == TranType.Buy|| eqt.tranType ==TranType.Bonus)
 					{
 						history.Investment += eqt.price * eqt.qty;
-						history.AssetValue += GetMonthPrice(eqt.equity.assetId, month, year,AssetType.Shares) * eqt.qty;
+						history.AssetValue += GetMonthPrice(eqt.equity, month, year) * eqt.qty;
 						history.portfolioId = eqt.portfolioId;
 						history.Assettype = myfinAPI.Model.AssetClass.AssetType.Shares; 
 
 						if (!equities.ContainsKey(eqt.equity.assetId))
-						{
+						{ 
 							equities.Add(eqt.equity.assetId, 0);
 						}
 					}
 					else
 					{
 						history.Investment -= eqt.price * eqt.qty;
-						history.AssetValue -= GetMonthPrice(eqt.equity.assetId, month, year,AssetType.Shares) * eqt.qty;
+						history.AssetValue -= GetMonthPrice(eqt.equity, month, year) * eqt.qty;
 					}				 
 			}			 		
 
@@ -698,15 +752,15 @@ namespace DailyRunEquity
 				component.getMySqlObj().AddAssetSnapshot(history);
 			}
 		}
-		private double GetDividendDetails(int month, int year, Portfolio p, Dictionary<string, double> equities, IList<EquityTransaction> t)
+		private decimal GetDividendDetails(int month, int year, Portfolio p, Dictionary<string, decimal> equities, IList<EquityTransaction> t)
 		{
 			IList<dividend> dividendDetails = new List<dividend>();
 			component.getMySqlObj().GetCompaniesDividendDetails(dividendDetails, p.folioId,month,year);
-			double dividend = 0;
+			decimal dividend = 0;
 			foreach (dividend div in dividendDetails)
 			{
 				IEnumerable<EquityTransaction> selectedTran = t.Where(n => n.equity.assetId == div.companyid);
-				double qty = 0;
+				decimal qty = 0;
 				if ((div.dtUpdated.Month <= month && div.dtUpdated.Year == year) || div.dtUpdated.Year < year)
 				{
 					foreach (EquityTransaction tran in selectedTran)
@@ -728,16 +782,16 @@ namespace DailyRunEquity
 			}
 			return dividend;
 		}
-		private double GetMonthPrice(string isin, int month, int year, myfinAPI.Model.AssetClass.AssetType typeAsset)
+		private decimal GetMonthPrice(EquityBase ast, int month, int year, myfinAPI.Model.AssetClass.AssetType typeAsset)
 		{
-			EquityBase e = new EquityBase() { assetId = isin };
-			component.getMySqlObj().GetCompanyDetails(e);
-			return GetMonthPrice(e, month, year, typeAsset);
+			//EquityBase e = new EquityBase() { assetId = isin };
+			component.getMySqlObj().GetCompanyDetails(ast);
+			return GetMonthPrice(ast, month, year);
 		}
-		private double GetMonthPrice(EquityBase e,int month, int year,AssetType typeAsset)
+		private decimal GetMonthPrice(EquityBase e,int month, int year)
 		{
-			double itemPrice = 0;
-			e.assetType = typeAsset;
+			decimal itemPrice = 0;
+			//e.assetType = typeAsset;
 			//Search from nav table
 			if (month == DateTime.Now.Month && year == DateTime.Now.Year)
 			{
@@ -757,11 +811,10 @@ namespace DailyRunEquity
 			}			 
 			return itemPrice;
 		}
-
-		private double getMonthlyPrice(EquityTransaction t)
+		private decimal getMonthlyPrice(EquityTransaction t)
 		{
-			double itemPrice;
-			IDictionary<int, double> montlyPrice = new Dictionary<int, double>();
+			decimal itemPrice;
+			IDictionary<int, decimal> montlyPrice = new Dictionary<int, decimal>();
 
 			itemPrice = component.getMySqlObj().GetHistoricalSharePrice(t.equity.assetId, t.tranDate.Month, t.tranDate.Year);
 			if (itemPrice == 0)
@@ -783,7 +836,9 @@ namespace DailyRunEquity
 						itemPrice = montlyPrice[key];
 					}
 					_eqHistory.Add(eq);
-					component.getMySqlObj().UpdateEquityMonthlyPrice(eq);
+					t.equity.livePrice = (decimal)eq.price;
+					
+					component.getMySqlObj().UpdateEquityMonthlyPrice(t.equity, eq.month, eq.year);
 				}
 				 
 			}

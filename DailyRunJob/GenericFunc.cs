@@ -277,8 +277,9 @@ namespace Equity
 
 		public IList<EquityBase> GetEquityLinks()
 		{
-			IEnumerable<EquityBase> listPortfolio= component.getMySqlObj().GetEquityNavUrl().Distinct<EquityBase>();
-			return listPortfolio.ToList();
+			IList<EquityBase> listPortfolio = new List<EquityBase>();
+			component.getMySqlObj().GetEquityDetails(listPortfolio) ;
+			return listPortfolio.Distinct<EquityBase>(new EquityComparer()).ToList();
 		}
 
 		public IList<string> GetBDAProcurementDetails()

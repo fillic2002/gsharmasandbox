@@ -8,17 +8,17 @@ namespace Git_Sandbox.Model
 	{
 		public DateTime dtUpdated { get; set; }
 		public string companyid { get; set; }
-		public double value { get; set; }
+		public decimal value { get; set; }
 		public DateTime lastCrawledDate { get; set; }
 		public TypeOfCredit creditType { get; set; }
 	}
 
 	public enum TypeOfCredit
 	{
-		IntDividend =1,
+		IntDividend =10,
 		Bonus=2,
-		SpclDividend=3,
-		FDividend=4
+		SpclDividend=12,
+		FDividend=11
 
 	}
 }

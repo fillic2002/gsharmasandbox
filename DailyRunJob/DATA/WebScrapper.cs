@@ -15,17 +15,18 @@ using OpenQA.Selenium.Interactions;
 using myfinAPI.Model;
 using static myfinAPI.Model.AssetClass;
 using myfinAPI.Model.DTO;
-
-
+using System.Collections.Concurrent;
 
 namespace Git_Sandbox.DailyRunJob.DATA
 {
+ 
+
 	public class WebScrapper : IDisposable
 	{
 		IWebDriver _driver;
 		ChromeOptions chromeOptions;
 		string _webScrapperUrl= string.Empty;
-		IDictionary<int, double> yearlyPrice;
+		IDictionary<int, decimal> yearlyPrice;
 		const string _mc = "https://www.moneycontrol.com/india/stockpricequote/";
 		const string _bondPrice = "https://www.nseindia.com/market-data/bonds-traded-in-capital-market";
 		const string _nseBondPriceLink ="https://www.nseindia.com/get-quotes/bonds?symbol=";
@@ -37,23 +38,35 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		const string _idfcMfCRF = "IDFC Credit Risk Fund-Direct Plan-Growth";
 		const string _bondSymbol = "NHAI,NHIT,IRFC,PFC";
 
+		 
+	 
+
+
 		public WebScrapper()
 		{
+		 
 			chromeOptions = new ChromeOptions();
 			//chromeOptions.AddArguments("headless");	
 			//chromeOptions.AddArguments("User-Agent:  Chrome/107.0.0.0 Safari/537.36 ");
 			chromeOptions.AddArguments("--safebrowsing-disable-download-protection");
-			_driver = new ChromeDriver(chromeOptions);			 
+			_driver = new ChromeDriver(chromeOptions);
+			
+		 
 		}
+	 
+
 		private void GetChromeINstance()
 		{
-			//Dispose();
+			Dispose();
 			_driver = new ChromeDriver(chromeOptions);
 		}
-		public void Dispose()
+		
+	
+	public void Dispose()
 		{
 			if (_driver != null)
 			{
+				Console.WriteLine("Closing ThreadID::" + Thread.CurrentThread.ManagedThreadId);
 				_driver.Close();
 				_driver.Quit();
 			}
@@ -63,7 +76,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			if (string.IsNullOrEmpty(eq.sourceurl))
 			{
 				return false;
-
 			}
 			
 			try
@@ -71,7 +83,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				Console.WriteLine("Access URL");
 				//GetChromeINstance();
 				_driver.Navigate().GoToUrl(eq.sourceurl);
-				Thread.Sleep(5000);
+				Thread.Sleep(4000);
 
 				Console.WriteLine("URL Opened");
 				IList<IWebElement> pb = _driver.FindElements(By.XPath("//div/span[@class='amt']"));
@@ -84,12 +96,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				//Thread.Sleep(1000);
 				var price = pb[0].Text.Replace(" ", "").Replace("?", "");
 				//Thread.Sleep(1000);
-				eq.livePrice = Convert.ToDouble(price.Substring(1, price.Length - 1));
-				Thread.Sleep(1000);
+				eq.livePrice = Convert.ToDecimal(price.Substring(1, price.Length - 1));
+				//Thread.Sleep(1000);
 				IList<IWebElement> fundSize = _driver.FindElements(By.XPath("//span[@class='amt']"));
 				Thread.Sleep(1000);
 				var fundS = fundSize[1].Text;
-				eq.MarketCap= Convert.ToDouble(fundS.Substring(1, fundS.Length-3));
+				eq.MarketCap= Convert.ToDecimal(fundS.Substring(1, fundS.Length-3));
 				eq.lastUpdated = DateTime.Now;
 				Thread.Sleep(100);
 				//Dispose();
@@ -103,26 +115,27 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			//Dispose();
 		}
 		public async Task<bool> GetEquityDetails(EquityBase eq)
-		{
-			
+		{			
 			if (string.IsNullOrEmpty(eq.divUrl))
 			{
-				Console.WriteLine("DivURL is empty::"+eq.equityName);
+			//	Console.WriteLine("DivURL is empty::"+eq.equityName);
 				return false;
 			}
 			//GetChromeINstance();
 			try {
 				_driver.Navigate().GoToUrl(eq.divUrl);
+				 
 			}
 			catch(Exception ex)
 			{
 				string s = ex.Message;
 				GetChromeINstance();
 			}
-
+		 
 			Thread.Sleep(450);
 			try
 			{
+				IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
 				IList<IWebElement> title = new List<IWebElement>();
 
 				IList<IWebElement> pb = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
@@ -130,12 +143,44 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
 				IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
 				var pr = prc[0].Text;
-				eq.livePrice = Convert.ToDouble(pr);
+				eq.livePrice = Convert.ToDecimal(pr);
 				title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
 				if (pricetobook != "-")
 				{
-					eq.PB = Convert.ToDouble(pricetobook);
-					eq.MarketCap = Convert.ToDouble(mc);					 
+					eq.PB = Convert.ToDecimal(pricetobook);
+					eq.MarketCap = Convert.ToDecimal(mc);					 
+				}
+				if (eq.lastUpdated.AddDays(1) >= DateTime.Now)
+					return true;
+				//Freefloat details
+				Thread.Sleep(200);
+				title = _driver.FindElements(By.XPath("//h1[@class='panel-title']/a"));
+				Thread.Sleep(2000);
+				//IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
+				js.ExecuteScript("arguments[0].scrollIntoView();", title[4]);
+				Thread.Sleep(1000);
+				title[4].Click();
+				Thread.Sleep(1000);
+				UInt64 noOfShare = 0;
+				IList<IWebElement> shrHld = _driver.FindElements(By.XPath("//div[@class='largetable']//td"));
+				IList<IWebElement> rows = _driver.FindElements(By.XPath("//div[@class='largetable']//tr"));
+				foreach (IWebElement row in rows)
+				{
+					//Console.WriteLine(row.Text);
+					if (row.Text.Contains("Grand Total") && row.Text.StartsWith("Grand"))
+					{
+						//Console.WriteLine(row.Text);
+						if (row.Text.StartsWith("Grand"))
+						{
+							var s = row.FindElements(By.TagName("td"));
+							Console.ForegroundColor = ConsoleColor.Yellow;
+							Console.Write("TotalShare::"+s[3].Text);
+							Console.ResetColor();
+							noOfShare = UInt64.Parse(s[3].Text.Replace(",", ""));
+							eq.freefloat = noOfShare;
+							break;
+						}
+					}
 				}
 			}
 			catch(Exception ex)
@@ -191,7 +236,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			int rowCount = 5;
 			foreach(IWebElement row in divAndBonusRows)
 			{
-				if (divAndBonusRows.Count  >= rowCount+10) // last 10 records
+				if (divAndBonusRows.Count  >= rowCount+2) // last 10 records
 				{
 					rowCount++;
 					continue;
@@ -214,7 +259,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						else 
 							div.creditType = TypeOfCredit.IntDividend;
 
-						div.value = Convert.ToDouble(divi);
+						div.value = Convert.ToDecimal(divi);
 						div.dtUpdated = Convert.ToDateTime(cell[2].Text);
 						div.lastCrawledDate = DateTime.Parse(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 
@@ -225,7 +270,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						Console.WriteLine(cell[3].Text);
 						string b = cell[3].Text.Replace("Bonus issue","");
 						div.creditType = TypeOfCredit.Bonus;
-						div.value = Convert.ToDouble(b.Replace(':','.'));
+						div.value = Convert.ToDecimal(b.Replace(':','.'));
 						div.dtUpdated = Convert.ToDateTime(cell[2].Text);
 						div.lastCrawledDate = DateTime.Parse(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 						component.getMySqlObj().ReplaceDividendDetails(div);
@@ -270,12 +315,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
 					IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
 					var pr = prc[0].Text;
-					e.livePrice = Convert.ToDouble(pr);
+					e.livePrice = Convert.ToDecimal(pr);
 					title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
 					if (pricetobook != "-")
 						{
-						e.PB = Convert.ToDouble(pricetobook);
-						e.MarketCap = Convert.ToDouble(mc);
+						e.PB = Convert.ToDecimal(pricetobook);
+						e.MarketCap = Convert.ToDecimal(mc);
 						if (flag == "PB")
 							return;
 						title = _driver.FindElements(By.XPath("//h1[@class='panel-title']/a"));
@@ -323,10 +368,10 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			int i= 1;
 			//Past 2 dividend details
 			DateTime previoudDivDate=DateTime.Now;
-			double previousDivValue=0;
+			decimal previousDivValue=0;
 			GetBonusDetailsFromBse(div);
 			//Update Bonus here
-			component.getMySqlObj().ReplaceDividendDetails(div);
+			//component.getMySqlObj().ReplaceDividendDetails(div);
 
 			while (i <= 5)
 			{
@@ -363,7 +408,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			//Dispose();
 		}
 
-		public IDictionary<int,double> GetHistoricalAssetPrice(string name, int month, int year, AssetType assetType)
+		public IDictionary<int,decimal> GetHistoricalAssetPrice(string name, int month, int year, AssetType assetType)
 		{
 			
 			if (assetType== AssetType.Shares)
@@ -374,7 +419,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			else
 			{
 				_webScrapperUrl = "https://www.amfiindia.com/net-asset-value/nav-history";				
-				Dictionary<int,double> price= new Dictionary<int, double>();
+				Dictionary<int,decimal> price= new Dictionary<int, decimal>();
 				// This is a webscrapper
 				price.Add(month, GetHistoricalMFPrice(name, month, year));
 				//This is to read from a file
@@ -384,6 +429,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			
 			return GetHistoricalSharePrice(name, month, year);
 		}
+		
 		CsvConfiguration csvConfig = new CsvConfiguration(CultureInfo.CurrentCulture)
 		{
 			HasHeaderRecord = false
@@ -472,12 +518,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		//		string s = ex.Message;
 		//	}
 		//}
-		private IDictionary<int,double> GetHistoricalSharePrice(string name, int month, int year)
+		private IDictionary<int,decimal> GetHistoricalSharePrice(string name, int month, int year)
 		{			
 			try
 			{
 				int length = 3;
-				yearlyPrice = new Dictionary<int, double>();
+				yearlyPrice = new Dictionary<int, decimal>();
 
 				Thread.Sleep(2500);				 
 				//GetChromeINstance();
@@ -568,7 +614,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				return "SBI LONG TERM ADVANTAGE FUND - SERIES I - DIRECT PLAN - GROWTH";
 			return DBSavedMFName;
 		}
-		private double GetHistoricalMFPrice(string name, int month, int year)
+		private decimal GetHistoricalMFPrice(string name, int month, int year)
 		{
 			try
 			{
@@ -660,7 +706,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				IWebElement result = _driver.FindElement(By.XPath("//*[@id='divExcelPeriod']/table/tbody/tr[6]/td[1]"));
 				var re = result.Text;
 				//Dispose();
-				return Convert.ToDouble(result.Text);
+				return Convert.ToDecimal(result.Text);
 				//var result = _driver.FindElement(By.XPath("//*[@id='mc_mainWrapper']/div[2]/div[1]/div[4]/div[4]/table/tbody/tr[3]/td[5]")).Text;
 
 				
@@ -677,7 +723,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			Thread.Sleep(2000);
 			var dtt = _driver.FindElements(By.XPath("//*[@id='tblinsidertrd']/tbody/tr[" + yr + "]/td[3]"))[0].Text;
 			item.dtUpdated = Convert.ToDateTime(dtt);
-			item.value = Convert.ToDouble(data);
+			item.value = Convert.ToDecimal(data);
 			item.creditType = TypeOfCredit.FDividend;
 		}
 		private void GetBonusDetailsFromBse(dividend item)
@@ -697,7 +743,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						var res = data[i].FindElements(By.TagName("td"));
 						Console.WriteLine("Result TD::" + res[0].Text);
 						string[] bonus = res[0].Text.Split(' ');
-						item.value =  Convert.ToDouble(bonus[2].Replace(':','.'));
+						item.value =  Convert.ToDecimal(bonus[2].Replace(':','.'));
 						item.creditType = TypeOfCredit.Bonus;
 						var dtt = res[2].Text;
 						item.dtUpdated = Convert.ToDateTime(dtt);
@@ -718,34 +764,34 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			var data = _driver.FindElements(By.XPath("//*[@id='mc_content']/div[2]/section[2]/div/div[2]/table/tbody/tr["+yr+"]/td[5]"))[0].Text;			
 			var dtt = _driver.FindElements(By.XPath("//*[@id='mc_content']/div[2]/section[2]/div/div[2]/table/tbody/tr["+yr+"]/td[1]"))[0].Text;			
 			item.dtUpdated = Convert.ToDateTime(dtt);
-			item.value = Convert.ToDouble(data.Substring(data.IndexOf("Rs.") + 3, 6));
+			item.value = Convert.ToDecimal(data.Substring(data.IndexOf("Rs.") + 3, 6));
 		}
 		private void GetYearlyPrice(string month, string price)
 		{
 			if (month.Contains("Jan"))
-				yearlyPrice.Add(1, Convert.ToDouble(price));
+				yearlyPrice.Add(1, Convert.ToDecimal(price));
 			else if (month.Contains("Feb"))
-				yearlyPrice.Add(2, Convert.ToDouble(price));
+				yearlyPrice.Add(2, Convert.ToDecimal(price));
 			else if (month.Contains("Mar"))
-				yearlyPrice.Add(3, Convert.ToDouble(price));
+				yearlyPrice.Add(3, Convert.ToDecimal(price));
 			else if (month.Contains("Apr"))
-				yearlyPrice.Add(4, Convert.ToDouble(price));
+				yearlyPrice.Add(4, Convert.ToDecimal(price));
 			else if (month.Contains("May"))
-				yearlyPrice.Add(5, Convert.ToDouble(price));
+				yearlyPrice.Add(5, Convert.ToDecimal(price));
 			else if (month.Contains("June"))
-				yearlyPrice.Add(6, Convert.ToDouble(price));
+				yearlyPrice.Add(6, Convert.ToDecimal(price));
 			else if (month.Contains("July"))
-				yearlyPrice.Add(7, Convert.ToDouble(price));
+				yearlyPrice.Add(7, Convert.ToDecimal(price));
 			else if (month.Contains("Aug"))
-				yearlyPrice.Add(8, Convert.ToDouble(price));
+				yearlyPrice.Add(8, Convert.ToDecimal(price));
 			else if (month.Contains("Sep"))
-				yearlyPrice.Add(9, Convert.ToDouble(price));
+				yearlyPrice.Add(9, Convert.ToDecimal(price));
 			else if (month.Contains("Oct"))
-				yearlyPrice.Add(10, Convert.ToDouble(price));
+				yearlyPrice.Add(10, Convert.ToDecimal(price));
 			else if (month.Contains("Nov"))
-				yearlyPrice.Add(11, Convert.ToDouble(price));
+				yearlyPrice.Add(11, Convert.ToDecimal(price));
 			else if (month.Contains("Dec"))
-				yearlyPrice.Add(12, Convert.ToDouble(price));
+				yearlyPrice.Add(12, Convert.ToDecimal(price));
 		}
 		public void getListOfCompany(out List<string> companyList)
 		{
@@ -840,7 +886,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				{
 					obj.Add(new Bond()
 					{							
-						LivePrice = Convert.ToDouble(price),							
+						LivePrice = Convert.ToDecimal(price),							
 						dateOfMaturity = Convert.ToDateTime(s),
 						BondId = bondDetailURL[2].Text,
 						symbol = company+bondDetailURL[1].Text,
@@ -877,9 +923,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						obj.Add(new Bond()
 						{
-							couponRate = Convert.ToDouble(list[3]),
-							faceValue = Convert.ToDouble(list[4]),
-							LivePrice = Convert.ToDouble(list[5]),
+							couponRate = Convert.ToDecimal(list[3]),
+							faceValue = Convert.ToDecimal(list[4]),
+							LivePrice = Convert.ToDecimal(list[5]),
 							//YTM = Convert.ToDouble(list[3]) * Convert.ToDouble(list[4]) / Convert.ToDouble(list[5]),
 							BondName= list[0] + list[1],
 							dateOfMaturity = Convert.ToDateTime(s)

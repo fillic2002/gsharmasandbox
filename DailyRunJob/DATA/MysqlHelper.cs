@@ -36,11 +36,11 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				_conn.Open();
 				using var command = new MySqlCommand(@"UPDATE myfin.equitydetails SET liveprice = " + eq.livePrice + "," +
 									" dtupdated ='" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + "', pb= "+eq.PB+", " +
-									" marketcap="+eq.MarketCap+" WHERE ISIN = '" + eq.assetId + "';", _conn);
+									" marketcap="+eq.MarketCap+",Totalshare="+eq.freefloat +" WHERE ISIN = '" + eq.assetId + "';", _conn);
 
 				int result = command.ExecuteNonQuery();
 				Console.ForegroundColor = ConsoleColor.Green;
-				Console.WriteLine("Successfully Updated company details:" + eq.equityName + ":: Price::" + eq.livePrice);
+				Console.WriteLine("Updated company::" + eq.equityName + ":: Price::" + eq.livePrice);
 				Console.ResetColor();
 			}
 			return true;
@@ -58,9 +58,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 			return true;
 		}
-		public double GetLatesNAV(string equityId)
+		public decimal GetLatesNAV(string equityId)
 		{
-			double result = 0;
+			decimal result = 0;
 			
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
@@ -68,19 +68,20 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				using var command = new MySqlCommand(@"SELECT liveprice FROM myfin.equitydetails" +
 									" WHERE ISIN = '" + equityId + "';", _conn);
 
-				 result = (double)command.ExecuteScalar();
+				 result = Convert.ToDecimal(command.ExecuteScalar());
 			}
 			return result;
 		}
 
-		public IList<EquityBase> GetEquityNavUrl()
+		public void GetEquityDetails(IList<EquityBase> eq) 
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"select name,dtupdated,isin, divlink,assettypeid,description from myfin.equitydetails where myfin.equitydetails.description IS NOT NULL;", _conn);
+				using var command = new MySqlCommand(@"select name,dtupdated,isin, divlink,assettypeid,description,liveprice from myfin.equitydetails 
+						where myfin.equitydetails.description IS NOT NULL;", _conn);
 				using var reader = command.ExecuteReader();
-				IList<EquityBase> eq = new List<EquityBase>();
+				//IList<EquityBase> eq = new List<EquityBase>();
 				while (reader.Read())
 				{
 					DateTime tim = new DateTime(1000, 1, 1);
@@ -95,11 +96,11 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						assetType = (AssetType)((int)reader["assettypeid"]),
 						divUrl = reader["divlink"].ToString(),						
 						lastUpdated =tim,
-						equityName = reader["name"].ToString()
-						
+						equityName = reader["name"].ToString(),
+						livePrice = Convert.ToDecimal(reader["liveprice"].ToString()),
 					});
 				}
-				return eq;
+				//return eq;
 			}
 
 		}
@@ -131,7 +132,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE into myfin.dividend(isin,dividend,dtupdated,lastcrawleddt,typeofcredit) 
-						values('" + item.companyid+"','"+item.value+"','"+item.dtUpdated.ToString("yyyy-MM-dd") + "','" + item.lastCrawledDate.ToString("yyyy-MM-dd HH:mm:ss") + "','"+item.creditType+"');", _conn);
+						values('" + item.companyid+"','"+item.value+"','"+item.dtUpdated.ToString("yyyy-MM-dd") + "','" +
+						item.lastCrawledDate.ToString("yyyy-MM-dd HH:mm:ss") + "',"+(int)item.creditType+");", _conn);
 				int  reader = command.ExecuteNonQuery();
 				Console.ForegroundColor = ConsoleColor.Green;
 				Console.WriteLine(item.companyid + " Dividend Added Successfully for:: "+item.dtUpdated);
@@ -154,13 +156,13 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					item.Add(new dividend()
 					{						
 						companyid= reader["isin"].ToString(),
-
 					});
 				}
 			}
 		}
 		public void GetTransactions(IList<EquityTransaction> p, int portfolioId)
 		{
+			 
 			try
 			{
 				using (MySqlConnection _conn = new MySqlConnection(connString))
@@ -173,14 +175,14 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					//				where portfolioid=" + portfolioId + ";", _conn);
 					if (portfolioId != 0)
 					{
-						query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name,ed.divlink FROM myfin.equitytransactions et
+						query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name,ed.divlink ,ed.pb eqtpb, ed.marketcap eqtmc FROM myfin.equitytransactions et
 							Join myfin.equitydetails ed
 							ON ed.isin=et.isin
 							where portfolioid=" + portfolioId + ";";
 					}
 					else
 					{
-						query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name,ed.divlink FROM myfin.equitytransactions et
+						query = @"SELECT et.*,ed.liveprice,ed.assettypeid,ed.name,ed.divlink,ed.pb eqtpb, ed.marketcap eqtmc FROM myfin.equitytransactions et 
 							Join myfin.equitydetails ed
 							ON ed.isin=et.isin;";
 					}
@@ -189,27 +191,33 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 					while (reader.Read())
 					{
+						//if(reader["openshare"] is DBNull)
+						//{
+						//	Console.WriteLine("IN");
+						//}
+						
 						p.Add(new EquityTransaction()
 						{
 							equity = new EquityBase()
 							{
 								assetId = reader["isin"].ToString(),
-								livePrice = Convert.ToDouble(reader["liveprice"]),								
+								livePrice = Convert.ToDecimal(reader["liveprice"]),								
 								equityName = reader["name"].ToString(),
 								divUrl = reader["divlink"].ToString(),
-								MarketCap = Convert.ToDouble(reader["marketcap"]),
-								PB = Convert.ToDouble(reader["pb"]),
+								MarketCap = Convert.ToDecimal(reader["eqtmc"]),
+								PB = Convert.ToDecimal(reader["eqtpb"]),
 								assetType = (AssetType)Convert.ToInt32(reader["assettypeid"]),
 
 							},
 							//assetTypeId= (AssetType)Convert.ToInt32(reader["assettypeid"]),
-							price = Convert.ToDouble(reader["price"]),
+							price = Convert.ToDecimal(reader["price"]),
 							portfolioId = Convert.ToInt16(reader["portfolioid"]),
 							tranDate = Convert.ToDateTime(reader["TransactionDate"]),
 							tranType = (TranType)Convert.ToInt16(reader["action"]),
 							qty = Convert.ToInt32(reader["qty"]),
-							 
-
+							MarketCap_Tran = Convert.ToDecimal(reader["marketcap"]),
+							PB_Tran = Convert.ToDecimal(reader["pb"]),
+							freefloat_tran = Convert.ToDecimal(reader["openshare"] is DBNull?0: reader["openshare"]),
 						});
 					}
 				}
@@ -244,7 +252,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 			}
 		}
-
 		public bool UpdateTransaction(EquityTransaction tran)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
@@ -252,7 +259,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				_conn.Open();
 				string dt = tran.tranDate.ToString("yyyy-MM-dd");
 				using var command = new MySqlCommand(@"UPDATE myfin.equitytransactions 
-								SET pb= "+tran.equity.PB+" , marketcap="+tran.equity.MarketCap+", OpenShare="+tran.qty+" WHERE ISIN='"+tran.equity.assetId + "' AND transactiondate='"+dt+"';", _conn);
+								SET pb= "+tran.PB_Tran+" , marketcap="+tran.MarketCap_Tran+", OpenShare="+tran.equity.freefloat+" WHERE ISIN='"+tran.equity.assetId + "' AND transactiondate='"+dt+"';", _conn);
 				int result = command.ExecuteNonQuery();
 			}
 			return true;
@@ -272,12 +279,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					p.Add(new propertyTransaction()
 					{					 
 						astType = (myfinAPI.Model.AssetClass.AssetType)Convert.ToInt32(reader["assettype"]),					 
-						astvalue = Convert.ToDouble(reader["currentvalue"]),
+						astvalue = Convert.ToDecimal(reader["currentvalue"]),
 						portfolioId = Convert.ToInt16(reader["portfolioid"]),
 						TransactionDate = Convert.ToDateTime(reader["dtofpurchase"]),
-						investment = Convert.ToDouble(reader["purchaseprc"]),
+						investment = Convert.ToDecimal(reader["purchaseprc"]),
 						TypeofTransaction = Convert.ToChar(reader["tranmode"]),
-						qty = Convert.ToDouble(reader["qty"])
+						qty = Convert.ToDecimal(reader["qty"])
 					}); ;
 				}
 			}
@@ -330,7 +337,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						tim = Convert.ToDateTime(reader["dtupdated"]);
 
 					e.equityName = reader["Name"].ToString();
-					e.livePrice = Convert.ToDouble(reader["liveprice"]);
+					e.livePrice = Convert.ToDecimal(reader["liveprice"]);
 					e.lastUpdated = tim;
 				}
 			}
@@ -382,8 +389,6 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 			}
 		}
-
-
 		public void GetCompaniesDividendDetails(IList<dividend> d, int portfolioId, int month, int year)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
@@ -400,7 +405,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						companyid=reader["isin"].ToString() ,
 						dtUpdated= Convert.ToDateTime(reader["dtupdated"]),
-						value = Convert.ToDouble(reader["dividend"])
+						value = Convert.ToDecimal(reader["dividend"])
 					});
 				}
 			}
@@ -450,9 +455,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 				while (reader.Read())
 				{
-					hstry.AssetValue = Convert.ToDouble(reader["assetvalue"]);
-					hstry.Dividend = Convert.ToDouble(reader["dividend"]);
-					hstry.Investment = Convert.ToDouble(reader["invstmt"]);
+					hstry.AssetValue = Convert.ToDecimal(reader["assetvalue"]);
+					hstry.Dividend = Convert.ToDecimal(reader["dividend"]);
+					hstry.Investment = Convert.ToDecimal(reader["invstmt"]);
 				
 				}
 
@@ -492,7 +497,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 							companyid = reader["ISIN"].ToString(),
 							dtUpdated = Convert.ToDateTime(reader["dtupdated"]),
 							lastCrawledDate = Convert.ToDateTime(reader["lastcrawleddt"]),
-							value = Convert.ToDouble(reader["dividend"]),
+							value = Convert.ToDecimal(reader["dividend"]),
 							creditType = (TypeOfCredit)Enum.Parse(typeof(TypeOfCredit), reader["Typeofcredit"].ToString())
 						});
 					}
@@ -504,20 +509,21 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			}
 		}
 
-		public bool UpdateEquityMonthlyPrice(equityHistory equityItem)
+		public bool UpdateEquityMonthlyPrice(EquityBase equityItem, int month, int yr)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"REPLACE INTO myfin.equitymonthlyprice (id, month,year,price,assetType)
-				values('" + equityItem.equityid+ "'," + equityItem.month+ "," + equityItem.year+ "," + equityItem.price+","+equityItem.assetType+");", _conn);
+				using var command = new MySqlCommand(@"REPLACE INTO myfin.equitymonthlyprice (id, month,year,price,assetType,openshare,updatedon)
+				values('" + equityItem.assetId+ "'," + month+ "," + yr+ "," +
+				equityItem.livePrice+","+(int)equityItem.assetType+","+equityItem.freefloat+",'"+ DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + "');", _conn);
 				using var reader = command.ExecuteReader();
 
 				return true;
 			}
 		}
  
-		public double GetHistoricalSharePrice(string id,int month, int year)
+		public decimal GetHistoricalSharePrice(string id,int month, int year)
 			{
 				using (MySqlConnection _conn = new MySqlConnection(connString))
 				{
@@ -528,7 +534,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 					while (reader.Read())
 					{
-						return Convert.ToDouble(reader["price"]);						
+						return Convert.ToDecimal(reader["price"]);
+					
 					}
 				return 0;
 				}
@@ -546,9 +553,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				{
 					pftran.Add(new PFAccount(){  
 						DateOfTransaction = Convert.ToDateTime(reader["dtofchange"]),
-						InvestmentEmp = Convert.ToDouble(reader["emp"]),
-						InvestmentEmplr= Convert.ToDouble(reader["employer"]),
-						Pension= Convert.ToDouble(reader["pension"]),
+						InvestmentEmp = Convert.ToDecimal(reader["emp"]),
+						InvestmentEmplr= Convert.ToDecimal(reader["employer"]),
+						Pension= Convert.ToDecimal(reader["pension"]),
 						TypeOfTransaction= Enum.Parse<TranType>(reader["typeofcredit"].ToString())
 					});			
 				}

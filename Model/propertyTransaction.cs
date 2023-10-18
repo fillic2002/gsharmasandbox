@@ -8,10 +8,10 @@ namespace Git_Sandbox.Model
 	{
 		public int portfolioId { get; set; }
 		public myfinAPI.Model.AssetClass.AssetType astType { get; set; }
-		public double astvalue { get; set; }
-		public double investment { get; set; }
+		public decimal astvalue { get; set; }
+		public decimal investment { get; set; }
 		public DateTime TransactionDate { get; set; }
 		public char TypeofTransaction { get; set; }
-		public double qty { get; set; }
+		public decimal qty { get; set; }
 	}
 }

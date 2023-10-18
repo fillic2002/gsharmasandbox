@@ -18,11 +18,11 @@ namespace Git_Sandbox
                 WebHelper _webHelper = new WebHelper();
 
                 //Update any missing URL
-                // obj.UpdateCompanyDetails();
+                 //obj.UpdateCompanyDetails();
 
                 // component.getBondsObj().LoadBondDetails();
 
-                component.getExpenseHelperObj().getExpense();
+               component.getExpenseHelperObj().getExpense();
                //Update Shares latest NAV -Daily
                obj.UpdateEquityLiveData();		
 
@@ -31,7 +31,7 @@ namespace Git_Sandbox
                 
                obj.AddBonusTransaction();
 
-               obj.AddPbAndMarketCap();
+               obj.AddTransactionPbAndMarketCap();
                
                obj.UpdatePPFSnapshot();
                
@@ -39,10 +39,7 @@ namespace Git_Sandbox
 
                _webHelper.GetProcurementDetails();
 
-
-
-                Console.ReadKey();
-            
+                Console.ReadKey();            
             }
             catch(Exception ex)
 			{

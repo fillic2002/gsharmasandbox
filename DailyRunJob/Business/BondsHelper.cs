@@ -53,7 +53,7 @@ namespace Git_Sandbox.DailyRunJob.Business
 			catch (Exception e)
 			{
 				Console.WriteLine(e.Message);
-				component.getWebScrappertObj().Dispose();
+				//component.getWebScrappertObj().Dispose();
 			}		
 		}
 		 
@@ -100,7 +100,7 @@ namespace Git_Sandbox.DailyRunJob.Business
 
 			foreach (Bond b in bondDetails)
 			{
-				double livePr = b.LivePrice;
+				decimal livePr = b.LivePrice;
 				component.getBondBusinessHelperObj().SearchBondDetails(b);
 				if (b.LivePrice == livePr) //If the price already updated no need to update again
 					continue;
@@ -139,9 +139,9 @@ namespace Git_Sandbox.DailyRunJob.Business
 					Console.WriteLine(line);
 					int Index = 0;
 					int pointer = 0;int startIndex = 0;
-					double liveP = 0;
-					double coupon = 0;
-					double fv = 0;
+					decimal liveP = 0;
+					decimal coupon = 0;
+					decimal fv = 0;
 					string sym = "";
 					string ser = "";
 					DateTime maturity= new DateTime();
@@ -154,13 +154,13 @@ namespace Git_Sandbox.DailyRunJob.Business
 							sym = vla;
 						}else if(Index==5)
 						{
-							liveP = Convert.ToDouble(vla);
+							liveP = Convert.ToDecimal(vla);
 						}else if (Index == 3)
 						{
-							coupon = Convert.ToDouble(vla);
+							coupon = Convert.ToDecimal(vla);
 						}else if (Index == 4)
 						{
-							fv = Convert.ToDouble(vla);
+							fv = Convert.ToDecimal(vla);
 						}else if (Index == 1)
 						{
 							ser = vla;
@@ -246,12 +246,12 @@ namespace Git_Sandbox.DailyRunJob.Business
 								Bond bondNew = new Bond()
 								{
 									BondId = isin,
-									couponRate = Convert.ToDouble(coupon),
+									couponRate = Convert.ToDecimal(coupon),
 									dateOfMaturity = dom,
 									intrestCycle = intrestCycle.ToString(),
 									rating = rating,
 									BondName = bondName.ToString(),
-									faceValue = Convert.ToDouble(faceVal.ToString() == "" ? "0" : faceVal.ToString()),
+									faceValue = Convert.ToDecimal(faceVal.ToString() == "" ? "0" : faceVal.ToString()),
 									firstIPDate = doa
 									//firstIPDate = DateTime.Parse(firstIPDt.ToString())
 								};
