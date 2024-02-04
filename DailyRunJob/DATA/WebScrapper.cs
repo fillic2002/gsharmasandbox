@@ -57,7 +57,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 		private void GetChromeINstance()
 		{
-			Dispose();
+			//Dispose();
 			_driver = new ChromeDriver(chromeOptions);
 		}
 		
@@ -129,6 +129,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			catch(Exception ex)
 			{
 				string s = ex.Message;
+				_driver.Quit();
 				GetChromeINstance();
 			}
 		 
@@ -142,6 +143,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				var pricetobook = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[18].Text;
 				var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
 				IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
+				Thread.Sleep(200);
 				var pr = prc[0].Text;
 				eq.livePrice = Convert.ToDecimal(pr);
 				title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
@@ -150,12 +152,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					eq.PB = Convert.ToDecimal(pricetobook);
 					eq.MarketCap = Convert.ToDecimal(mc);					 
 				}
-				if (eq.lastUpdated.AddDays(1) >= DateTime.Now)
+				if (eq.lastUpdated.AddDays(7) >= DateTime.Now)
 					return true;
 				//Freefloat details
 				Thread.Sleep(200);
 				title = _driver.FindElements(By.XPath("//h1[@class='panel-title']/a"));
-				Thread.Sleep(2000);
+				Thread.Sleep(1500);
 				//IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
 				js.ExecuteScript("arguments[0].scrollIntoView();", title[4]);
 				Thread.Sleep(1000);
@@ -211,8 +213,10 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			_driver.Navigate().GoToUrl(e.divUrl);
 			IList<IWebElement> title = new List<IWebElement>();
 			IJavaScriptExecutor js = (IJavaScriptExecutor)_driver;
-			Thread.Sleep(2000);
-			title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
+			Thread.Sleep(1500);
+
+			title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));			 
+			
 			js.ExecuteScript("arguments[0].scrollIntoView();", title[3]);
 			Thread.Sleep(4500);
 			title[3].Click();
@@ -233,6 +237,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			//GetBonusDetailsFromBse(div);
 			
 			var divAndBonusRows = _driver.FindElements(By.TagName("tr"));
+			var temp = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
+			//var divAndBonusRows= _driver.FindElements(By.XPath("//*[@class='whitebox'][1]/div/div/div/tbody/tr"));
 			int rowCount = 5;
 			foreach(IWebElement row in divAndBonusRows)
 			{
@@ -251,13 +257,13 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						string divi = cell[3].Text.Substring(cell[3].Text.IndexOf("Rs")+6,4);
 						if(cell[3].Text.Contains("Special"))
-							div.creditType = TypeOfCredit.SpclDividend;
+							div.creditType = TranType.SpclDividend;
 						else if(cell[3].Text.Contains("Final"))
-							div.creditType = TypeOfCredit.FDividend;
+							div.creditType = TranType.FinalDividend;
 						else if (cell[3].Text.Contains("Interim"))
-							div.creditType = TypeOfCredit.IntDividend;
+							div.creditType = TranType.InterDividend;
 						else 
-							div.creditType = TypeOfCredit.IntDividend;
+							div.creditType = TranType.InterDividend;
 
 						div.value = Convert.ToDecimal(divi);
 						div.dtUpdated = Convert.ToDateTime(cell[2].Text);
@@ -269,7 +275,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						Console.WriteLine(cell[3].Text);
 						string b = cell[3].Text.Replace("Bonus issue","");
-						div.creditType = TypeOfCredit.Bonus;
+						div.creditType = TranType.Bonus;
 						div.value = Convert.ToDecimal(b.Replace(':','.'));
 						div.dtUpdated = Convert.ToDateTime(cell[2].Text);
 						div.lastCrawledDate = DateTime.Parse(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
@@ -724,7 +730,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			var dtt = _driver.FindElements(By.XPath("//*[@id='tblinsidertrd']/tbody/tr[" + yr + "]/td[3]"))[0].Text;
 			item.dtUpdated = Convert.ToDateTime(dtt);
 			item.value = Convert.ToDecimal(data);
-			item.creditType = TypeOfCredit.FDividend;
+			item.creditType = TranType.FinalDividend;
 		}
 		private void GetBonusDetailsFromBse(dividend item)
 		{
@@ -744,7 +750,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						Console.WriteLine("Result TD::" + res[0].Text);
 						string[] bonus = res[0].Text.Split(' ');
 						item.value =  Convert.ToDecimal(bonus[2].Replace(':','.'));
-						item.creditType = TypeOfCredit.Bonus;
+						item.creditType = TranType.Bonus;
 						var dtt = res[2].Text;
 						item.dtUpdated = Convert.ToDateTime(dtt);
 						item.lastCrawledDate = DateTime.UtcNow;

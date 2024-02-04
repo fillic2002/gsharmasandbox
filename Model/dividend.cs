@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using static myfinAPI.Model.AssetClass;
 
 namespace Git_Sandbox.Model
 {
@@ -10,15 +11,15 @@ namespace Git_Sandbox.Model
 		public string companyid { get; set; }
 		public decimal value { get; set; }
 		public DateTime lastCrawledDate { get; set; }
-		public TypeOfCredit creditType { get; set; }
+		public TranType creditType { get; set; }
 	}
 
-	public enum TypeOfCredit
-	{
-		IntDividend =10,
-		Bonus=2,
-		SpclDividend=12,
-		FDividend=11
+	//public enum TypeOfCredit
+	//{
+	//	IntDividend =10,
+	//	Bonus=2,
+	//	SpclDividend=12,
+	//	FDividend=11
 
-	}
+	//}
 }

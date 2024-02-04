@@ -498,7 +498,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 							dtUpdated = Convert.ToDateTime(reader["dtupdated"]),
 							lastCrawledDate = Convert.ToDateTime(reader["lastcrawleddt"]),
 							value = Convert.ToDecimal(reader["dividend"]),
-							creditType = (TypeOfCredit)Enum.Parse(typeof(TypeOfCredit), reader["Typeofcredit"].ToString())
+							creditType = (TranType)Enum.Parse(typeof(TranType), reader["Typeofcredit"].ToString())
 						});
 					}
 					catch(Exception ex)
