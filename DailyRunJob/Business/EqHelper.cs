@@ -83,43 +83,22 @@ namespace DailyRunEquity
 		public async Task UpdateEquityLiveData()
 		{
 			var stopwatch = Stopwatch.StartNew();
-			//IEnumerable<Task<EquityBase>> downloadTasksQuery =
-			//	   from item in equity
-			//	   select ProcessUrlAsync(item);
-
 			equity.ToList().ForEach(x=> ProcessUrl(x));
 
-			//RecordMonthlyAssetPrice(data);
-			//Console.WriteLine("Delay Start");
-			//Task.Delay(10000).Wait();
-			//Console.WriteLine("Delay end");
-
-			//component.getWebCrawlController().StartCrawlingAsync();
-			//List<Task<EquityBase>> downloadTasks = downloadTasksQuery.ToList();
-
-			//while (downloadTasks.Any())
-			//Thread.Sleep(100000);
+			
 			if (DateTime.Now.Day >= 20)
 				equity.ToList().ForEach(x => RecordMonthlyAssetPrice(x));
-//			{
+
 				try
 				{
-			//	RecordMonthlyAssetPrice(data);
-				//	Task<EquityBase> finishedTask = await Task.WhenAny(downloadTasks);
-				//	downloadTasks.Remove(finishedTask);
-				//	if (finishedTask.Status != TaskStatus.Faulted && finishedTask.Result!=null)
-				//	{
-				//Console.WriteLine("DB Update::" + finishedTask.Result.equityName+ " IS ::"+component.getMySqlObj().UpdateLatesNAV(finishedTask.Result));
-				//Thread.Sleep(100);
-				//		RecordMonthlyAssetPrice(finishedTask.Result);
-				//	}
+			
 			}
 				catch(Exception ex)
 				{
 					string s = ex.StackTrace;
-					//continue;
+			
 				}
-			//}
+	
 			stopwatch.Stop();
 			Console.WriteLine($"Elapsed time:          {stopwatch.Elapsed}\n");
 			Console.WriteLine("Saved all records:" + DateTime.Now.ToString("hh.mm.ss.ffffff"));
@@ -158,47 +137,52 @@ namespace DailyRunEquity
 			//component.getExcelHelperObj().
 			
 		}
-		public void ProcessUrl(EquityBase item)
+		public async void ProcessUrl(EquityBase item)
 		{
 			try
-			{			
-				//component.getMySqlObj().GetCompanyDetails(item);
-				if (item.lastUpdated <= DateTime.UtcNow.AddMinutes(-100) || item.livePrice==0)
-				{
-					if (item.assetType ==AssetType.Shares)
+			{
+				int retrial = 3;	
+				 
+					if (item.assetType ==AssetType.Shares && 
+						(item.lastUpdated <= DateTime.UtcNow.AddMinutes(-30) || item.livePrice == 0))
 					{
 						if (String.IsNullOrEmpty(item.divUrl))
 						{
 							Console.WriteLine("DivURL empty :: " + item.equityName);
 							return;
 						}
-						//if (item.assetId == "INE860A01027")
-						//	{
-						//component.getWebCrawlController().AddToCrawlQueue(item);
-						_ = component.getWebScrappertObj().GetEquityDetails(item);						
-						component.getMySqlObj().UpdateLatesNAV(item);
-
-					}
-					else if ((item.assetType == AssetType.Equity_MF || item.assetType == AssetType.Debt_MF)) 
+					//	if (item.assetId == "INE302A01020")
+					//	{	
+					bool result =await component.getWebScrappertObj().GetEquityDetails(item);						
+					while(result == false && retrial>0 )
 					{
-						//component.getWebCrawlController().AddToCrawlQueue(item);
-						_ = component.getWebScrappertObj().GetMFDetails(item);
-						component.getMySqlObj().UpdateLatesNAV(item);
+						retrial--;
+						result = await component.getWebScrappertObj().GetEquityDetails(item);						
+					}
+					if (result == false)
+						return;
+					component.getMySqlObj().UpdateLatesNAV(item);
+					Thread.Sleep(200);
+					//	}
+				}
+				else if ((item.assetType == AssetType.Equity_MF || item.assetType == AssetType.Debt_MF) &&
+					item.lastUpdated <= DateTime.UtcNow.AddMinutes(-1) || item.livePrice == 0) 
+				{
+
+					bool result  = await component.getWebScrappertObj().GetMFDetails(item);
+					while (result == false && retrial > 0)
+					{
+						retrial--;
+						result = await component.getWebScrappertObj().GetEquityDetails(item);
+						Console.WriteLine("Retiel :: " + retrial + " for getting MF -"+ item.equityName );
+						
+					}
+					if (result == false)
+						return;
+					component.getMySqlObj().UpdateLatesNAV(item);
 					}
 
-					//}
-					//else if((item.assetType==AssetType.Equity_MF || item.assetType == AssetType.Debt_MF) &&
-					//	item.lastUpdated < DateTime.UtcNow.AddMinutes(-1) )
-					//{
-					//	component.getWebScrappertObj().GetMFDetails(item);
-					//	component.getMySqlObj().UpdateLatesNAV(item);
-						
-					//}
-					//else
-					//{
-					
-					//}				
-				}
+				 
 				
 			}
 			catch(Exception ex)
@@ -242,7 +226,7 @@ namespace DailyRunEquity
 			Dictionary<string, int> tempBonus = new Dictionary<string, int>();
 			try
 			{
-				foreach (dividend comp in dividendDetails.Where(x => x.dtUpdated >= DateTime.Now.AddYears(-10) && x.creditType == TypeOfCredit.Bonus))
+				foreach (dividend comp in dividendDetails.Where(x => x.dtUpdated >= DateTime.Now.AddYears(-10) && x.creditType == TranType.Bonus))
 				{
 					//Get Bonus split
 					string[] bonusSplit = comp.value.ToString().Split('.');
@@ -310,23 +294,23 @@ namespace DailyRunEquity
 			{
 				try
 				{
-					//if (comp.companyid == "INE860A01027")
-					//{
-						component.getMySqlObj().getLastDividendOfCompany(comp);
-						if (DateTime.UtcNow.Subtract(comp.dtUpdated).TotalDays >= 90 &&
+					//if (comp.companyid == "INE752E01010")
+				//	{
+					component.getMySqlObj().getLastDividendOfCompany(comp);
+						if (DateTime.UtcNow.Subtract(comp.dtUpdated).TotalDays >= 0 &&
 							DateTime.UtcNow.Subtract(comp.lastCrawledDate).TotalDays > 7)
 						{
 
-							Console.WriteLine("Dividend Detail need Fresh from BSE:" + comp.companyid);
+							Console.WriteLine("Dividend Detail need Fresh from BSE:" + comp.companyid +"::");
 							component.getWebScrappertObj().GetEquityDivAndBonusDetail(comp, Listurl.First<EquityBase>(x => x.assetId == comp.companyid), "Dividend");
 
 						}
-					//}
+				//	}
 				}
 				catch (Exception ex)
 				{
 					string message = ex.StackTrace;
-					component.getWebScrappertObj().Dispose();
+					//component.getWebScrappertObj().Dispose();
 					continue;
 				}
 			}

@@ -140,10 +140,11 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				IList<IWebElement> title = new List<IWebElement>();
 
 				IList<IWebElement> pb = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
+				Thread.Sleep(500);
 				var pricetobook = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[18].Text;
 				var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
 				IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
-				Thread.Sleep(200);
+				Thread.Sleep(1000);
 				var pr = prc[0].Text;
 				eq.livePrice = Convert.ToDecimal(pr);
 				title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
@@ -191,6 +192,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				Console.WriteLine("Some problem fetching company details:"+eq.equityName);
 				Console.WriteLine(ex.StackTrace);
 				Console.ResetColor();
+				return false;
 			}
 			 
 			//Dispose();
