@@ -18,14 +18,20 @@ namespace Git_Sandbox
                 WebHelper _webHelper = new WebHelper();
 
                 //Update any missing URL
-                 //obj.UpdateCompanyDetails();
+                //obj.UpdateCompanyDetails();
 
                 // component.getBondsObj().LoadBondDetails();
+             component.getBondsObj().CalculateBondIntrest();
 
-               component.getExpenseHelperObj().getExpense();
-               //Update Shares latest NAV -Daily
-               obj.UpdateEquityLiveData();		
+                component.getExpenseHelperObj().getExpense();
+                //Update Shares latest NAV -Daily
+                //do
+                //{
+                    obj.UpdateEquityLiveData();
 
+                //} while (Eqhelper.failure);
+
+               
                 //Add new dividend details that are updated in bse in last 90 days
                obj.AddDividendDetails();               
                 
@@ -33,11 +39,14 @@ namespace Git_Sandbox
 
                obj.AddTransactionPbAndMarketCap();
                
-               obj.UpdatePPFSnapshot();
+               obj.UpdatePPFSnapshot(); 
                
-               obj.UpdateAssetHistory();
+               obj.UpdateAssetHistory();                
 
                _webHelper.GetProcurementDetails();
+
+               _webHelper.GetProcurementDetails();
+
 
                 Console.ReadKey();            
             }

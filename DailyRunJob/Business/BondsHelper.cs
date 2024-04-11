@@ -19,6 +19,21 @@ namespace Git_Sandbox.DailyRunJob.Business
 		List<Bond> bondMasterlist= new List<Bond>();
 		const string bondLivePriceFile = @"C:\Users\fillic\Downloads\MW-Bonds-on-CM-"; //27-Nov-2022.csv
 
+		public void CalculateBondIntrest()
+		{
+			IList<BondTransaction> bondTran = new List<BondTransaction>();
+			IList<BondIntrest> bondIntrst; 
+
+			component.getBondBusinessHelperObj().GetBondTransaction(0, bondTran);
+			bondTran.ToList().ForEach(x =>
+			{
+				bondIntrst = new List<BondIntrest>();
+				component.getBondContextObj().getBondIntrestForTransaction(bondIntrst,x, x.folioId);
+				if(bondIntrst.Count<=0)
+					component.getBondBusinessHelperObj().UpdateBondyIntrestPayment(x);
+			});
+		}
+
 		public void ReadBondLivePriceFromExcel(List<Bond> bondFromAllExcel)
 		{
 			try

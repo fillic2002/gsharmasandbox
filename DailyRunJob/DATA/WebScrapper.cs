@@ -131,6 +131,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				string s = ex.Message;
 				_driver.Quit();
 				GetChromeINstance();
+				_driver.Navigate().GoToUrl(eq.divUrl);
 			}
 		 
 			Thread.Sleep(450);
@@ -141,8 +142,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 				IList<IWebElement> pb = _driver.FindElements(By.XPath("//div[@class='whitebox']"));
 				Thread.Sleep(500);
-				var pricetobook = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[18].Text;
-				var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[12].Text;
+				var pricetobook = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[16].Text;
+				var mc = pb[2].FindElements(By.XPath("//td[@class='textvalue ng-binding']"))[10].Text;
 				IList<IWebElement> prc = _driver.FindElements(By.XPath("//strong[@id='idcrval']"));
 				Thread.Sleep(1000);
 				var pr = prc[0].Text;
@@ -150,7 +151,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				title = _driver.FindElements(By.XPath("//h1[@class='panel-title']"));
 				if (pricetobook != "-")
 				{
-					eq.PB = Convert.ToDecimal(pricetobook);
+					eq.PB = Convert.ToDecimal(pricetobook); Console.WriteLine("PB::"+pricetobook);
 					eq.MarketCap = Convert.ToDecimal(mc);					 
 				}
 				if (eq.lastUpdated.AddDays(7) >= DateTime.Now)
@@ -168,11 +169,9 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				IList<IWebElement> shrHld = _driver.FindElements(By.XPath("//div[@class='largetable']//td"));
 				IList<IWebElement> rows = _driver.FindElements(By.XPath("//div[@class='largetable']//tr"));
 				foreach (IWebElement row in rows)
-				{
-					//Console.WriteLine(row.Text);
+				{	
 					if (row.Text.Contains("Grand Total") && row.Text.StartsWith("Grand"))
 					{
-						//Console.WriteLine(row.Text);
 						if (row.Text.StartsWith("Grand"))
 						{
 							var s = row.FindElements(By.TagName("td"));

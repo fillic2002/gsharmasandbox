@@ -576,10 +576,15 @@ namespace DailyRunEquity
 
 		public void GetProcurementDetails()
 		{
-			component.getEprocObj().ShowProcurementInfo();
+			component.getEprocObj().ShowProcurementInfoNew();
 			 
 		}
-		
+		public void GetJobNotification()
+		{
+			component.getEprocObj().ShowProcurementInfoNew();
+
+		}
+
 
 	}
 }

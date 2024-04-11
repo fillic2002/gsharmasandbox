@@ -36,6 +36,7 @@ namespace DailyRunEquity
 		IList<Portfolio> folioDetail;
 
 		static IList<EquityBase> equity = new List<EquityBase>();
+		public static bool failure = true;
 
 		static readonly HttpClient s_client = new HttpClient
 		{
@@ -47,7 +48,7 @@ namespace DailyRunEquity
 			folioDetail = new List<Portfolio>();
 			component.getMySqlObj().GetPortFolio(folioDetail);
 
-			component.getMySqlObj().GetEquityDetails(equity);
+			 
 			_eqHistory = new List<equityHistory>();
 			_previousMonthSnapshot = new Dictionary<string, AssetHistory>();
 			
@@ -82,6 +83,8 @@ namespace DailyRunEquity
 		/// <returns></returns>
 		public async Task UpdateEquityLiveData()
 		{
+			failure = false;
+			component.getMySqlObj().GetEquityDetails(equity);
 			var stopwatch = Stopwatch.StartNew();
 			equity.ToList().ForEach(x=> ProcessUrl(x));
 
@@ -92,7 +95,7 @@ namespace DailyRunEquity
 				try
 				{
 			
-			}
+				}
 				catch(Exception ex)
 				{
 					string s = ex.StackTrace;
@@ -115,16 +118,7 @@ namespace DailyRunEquity
 				}
 				else
 				{
-					component.getMySqlObj().UpdateEquityMonthlyPrice(eq,DateTime.UtcNow.Month, DateTime.UtcNow.Year);
-					//component.getMySqlObj().UpdateEquityMonthlyPrice(new equityHistory()
-					//{
-					//	equityid = eq.assetId,
-					//	month = DateTime.Now.Month,
-					//	price = eq.livePrice,
-					//	year = DateTime.Now.Year,
-					//	assetType = Convert.ToInt32(eq.assetType),						
-
-					//});
+					component.getMySqlObj().UpdateEquityMonthlyPrice(eq,DateTime.UtcNow.Month, DateTime.UtcNow.Year);				
 				}	
 			}
 			catch(Exception e)
@@ -141,10 +135,10 @@ namespace DailyRunEquity
 		{
 			try
 			{
-				int retrial = 3;	
+				int retrial = 0;	
 				 
 					if (item.assetType ==AssetType.Shares && 
-						(item.lastUpdated <= DateTime.UtcNow.AddMinutes(-30) || item.livePrice == 0))
+						(item.lastUpdated <= DateTime.UtcNow.AddMinutes(-300) || item.livePrice == 0 || item.MarketCap==0 || item.PB==0 ))
 					{
 						if (String.IsNullOrEmpty(item.divUrl))
 						{
@@ -160,13 +154,17 @@ namespace DailyRunEquity
 						result = await component.getWebScrappertObj().GetEquityDetails(item);						
 					}
 					if (result == false)
+					{
+						failure = true;
 						return;
+					}
+						
 					component.getMySqlObj().UpdateLatesNAV(item);
 					Thread.Sleep(200);
 					//	}
 				}
 				else if ((item.assetType == AssetType.Equity_MF || item.assetType == AssetType.Debt_MF) &&
-					item.lastUpdated <= DateTime.UtcNow.AddMinutes(-1) || item.livePrice == 0) 
+					item.lastUpdated <= DateTime.UtcNow.AddMinutes(-300) || item.livePrice == 0) 
 				{
 
 					bool result  = await component.getWebScrappertObj().GetMFDetails(item);
@@ -359,7 +357,7 @@ namespace DailyRunEquity
 							//UpdatePFSnapshot(m, y, p, AssetType.PPF);
 							//UpdatePPFSnapshot(m, y, p, AssetType.PPF);
 							UpdateBankSnapshot(m, y, p, myfinAPI.Model.AssetClass.AssetType.Bank);
-							UpdateBondSnapshot(m, y, p, myfinAPI.Model.AssetClass.AssetType.Bonds, bondTran);
+							UpdateBondSnapshot(m, y, p, myfinAPI.Model.AssetClass.AssetType.Bonds, bondTran.Where(x=>x.purchaseDate.Year == y).ToList());
 						}
 					}
 				}
@@ -367,8 +365,7 @@ namespace DailyRunEquity
 		}
 		public void UpdateBondSnapshot(int m, int year, Portfolio p, myfinAPI.Model.AssetClass.AssetType astType, 
 			IList<BondTransaction> bondTran)
-		{
-		 
+		{		 
 			AssetHistory _pevMonthSnapshot=new AssetHistory();			 
 			
 			_pevMonthSnapshot.portfolioId = p.folioId;
@@ -388,8 +385,7 @@ namespace DailyRunEquity
 				}
 			}
 			try
-			{
-				 
+			{				 
 				foreach (BondTransaction tran in bondTran)
 				{
 					if (tran.purchaseDate.Month == m && tran.purchaseDate.Year == year)
@@ -405,6 +401,8 @@ namespace DailyRunEquity
 							if(tran.BondDetail.dateOfMaturity.Day <= DateTime.UtcNow.Day)
 							{
 								_pevMonthSnapshot.Investment -= tran.InvstPrice * tran.Qty + tran.AccuredIntrest;
+								if (tran.BondDetail.LivePrice==0)
+									throw new Exception();
 								_pevMonthSnapshot.AssetValue -= tran.BondDetail.LivePrice * tran.Qty;
 							}
 						}
@@ -414,14 +412,12 @@ namespace DailyRunEquity
 							_pevMonthSnapshot.AssetValue -= tran.BondDetail.LivePrice * tran.Qty;
 						}
 					}
-
 				}
 			}
 			catch(Exception ex)
 			{
 				string s = ex.Message;
 			}
-
 			
 			_pevMonthSnapshot.month = m;
 			_pevMonthSnapshot.year = year;

@@ -40,7 +40,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 
 				int result = command.ExecuteNonQuery();
 				Console.ForegroundColor = ConsoleColor.Green;
-				Console.WriteLine("Updated company::" + eq.equityName + ":: Price::" + eq.livePrice);
+				Console.WriteLine("Updated company::" + eq.equityName + ":: Price::" + eq.livePrice+", PB::"+ eq.PB +",MarketCap::"+eq.MarketCap);
 				Console.ResetColor();
 			}
 			return true;
@@ -78,7 +78,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"select name,dtupdated,isin, divlink,assettypeid,description,liveprice from myfin.equitydetails 
+				using var command = new MySqlCommand(@"select name,dtupdated,isin, divlink,assettypeid,description,liveprice, pb,marketcap from myfin.equitydetails 
 						where myfin.equitydetails.description IS NOT NULL;", _conn);
 				using var reader = command.ExecuteReader();
 				//IList<EquityBase> eq = new List<EquityBase>();
@@ -98,6 +98,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						lastUpdated =tim,
 						equityName = reader["name"].ToString(),
 						livePrice = Convert.ToDecimal(reader["liveprice"].ToString()),
+						PB = Convert.ToDecimal(reader["pb"].ToString()),
+						MarketCap= Convert.ToDecimal(reader["marketcap"].ToString()),
 					});
 				}
 				//return eq;
