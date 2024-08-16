@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using static myfinAPI.Model.AssetClass;
 
 namespace Git_Sandbox.Model

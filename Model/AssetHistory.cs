@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Git_Sandbox.Model
+﻿namespace Git_Sandbox.Model
 {
 	//public class AssetHistory
 	//{
@@ -14,7 +10,7 @@ namespace Git_Sandbox.Model
 	//	public int year { get; set; }
 	//	public double qty { get; set; }
 	//	public AssetType assetType { get; set; }
-		
+
 	//}
-	
+
 }

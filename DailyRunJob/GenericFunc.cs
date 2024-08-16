@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Git_Sandbox.DailyRunJob;
@@ -11,8 +10,6 @@ using Git_Sandbox.Model;
 //using System.Web.Script.Serialization;
 using HtmlAgilityPack;
 using myfinAPI.Model;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using static myfinAPI.Model.AssetClass;
 
 namespace Equity
@@ -32,18 +29,18 @@ namespace Equity
 		public enum MFName
 		{
 			IDFC_DEBT = 1,
-			SBI_EQUITY=2,
-			AXIS_EQUITY=3,
-			IDFC_CORP_EQ_FUND=4,
-			IDFC_SUPER_SAVER_INCOME_MEDIUM=5,
-			KOTAK_CORP_BOND=6,
+			SBI_EQUITY = 2,
+			AXIS_EQUITY = 3,
+			IDFC_CORP_EQ_FUND = 4,
+			IDFC_SUPER_SAVER_INCOME_MEDIUM = 5,
+			KOTAK_CORP_BOND = 6,
 
 		};
 		public enum CompanyName
 		{
 			BEL = 0,
-			GAIL ,
-			HAL ,
+			GAIL,
+			HAL,
 			SRIKALAHASTI,
 			PETRONETLNG,
 			BALMERLAWRIE,
@@ -51,7 +48,7 @@ namespace Equity
 			TATACHEMICAL,
 			MAHANAGAR,
 			NESCO,
-			POWERGRID=10,
+			POWERGRID = 10,
 			ONGC,
 			GIC,
 			NIACL,
@@ -63,14 +60,14 @@ namespace Equity
 			if (web == null)
 				web = new HtmlWeb();
 
-			MF_WATCH.Add((int)MFName.IDFC_DEBT, _baseURL+ "idfc-corporate-bond-fund-direct-plan/MAG1720");
-			MF_WATCH.Add((int)MFName.SBI_EQUITY, _baseURL+"sbi-long-term-advantage-fund-series-i-direct-plan/MSB1065");
-			MF_WATCH.Add((int)MFName.AXIS_EQUITY, _baseURL+"axis-long-term-equity-fund-direct-plan/MAA192");
-			MF_WATCH.Add((int)MFName.IDFC_CORP_EQ_FUND, _baseURL+"idfc-credit-opportunities-fund-direct-plan/MAG1765");
-			MF_WATCH.Add((int)MFName.IDFC_SUPER_SAVER_INCOME_MEDIUM, _baseURL +"idfc-super-saver-income-fund-medium-term-plan-direct-plan/MAG775");
-			MF_WATCH.Add((int)MFName.KOTAK_CORP_BOND, _baseURL+"kotak-corporate-bond-fund-direct-plan/MAI083");
+			MF_WATCH.Add((int)MFName.IDFC_DEBT, _baseURL + "idfc-corporate-bond-fund-direct-plan/MAG1720");
+			MF_WATCH.Add((int)MFName.SBI_EQUITY, _baseURL + "sbi-long-term-advantage-fund-series-i-direct-plan/MSB1065");
+			MF_WATCH.Add((int)MFName.AXIS_EQUITY, _baseURL + "axis-long-term-equity-fund-direct-plan/MAA192");
+			MF_WATCH.Add((int)MFName.IDFC_CORP_EQ_FUND, _baseURL + "idfc-credit-opportunities-fund-direct-plan/MAG1765");
+			MF_WATCH.Add((int)MFName.IDFC_SUPER_SAVER_INCOME_MEDIUM, _baseURL + "idfc-super-saver-income-fund-medium-term-plan-direct-plan/MAG775");
+			MF_WATCH.Add((int)MFName.KOTAK_CORP_BOND, _baseURL + "kotak-corporate-bond-fund-direct-plan/MAI083");
 
-		
+
 			SHARE_WATCH.Add((int)CompanyName.GAIL, "https://www.moneycontrol.com/india/stockpricequote/oil-drilling-and-exploration/gailindia/GAI");
 			SHARE_WATCH.Add((int)CompanyName.BEL, "https://www.moneycontrol.com/india/stockpricequote/electricals/bharatelectronics/BE03");
 			SHARE_WATCH.Add((int)CompanyName.NESCO, "https://www.moneycontrol.com/india/stockpricequote/diversified/nesco/NES");
@@ -228,9 +225,9 @@ namespace Equity
 		{
 			try
 			{
-				HtmlDocument doc = web.Load( eq.sourceurl);
+				HtmlDocument doc = web.Load(eq.sourceurl);
 				Thread.Sleep(2000);
-				string result="0";
+				string result = "0";
 				if (eq.assetType == AssetType.Shares)
 				{
 					try
@@ -238,11 +235,11 @@ namespace Equity
 						HtmlNodeCollection node = doc.DocumentNode.SelectNodes("//*[@id='nsecp']");
 						if (node == null)
 							node = doc.DocumentNode.SelectNodes("//*[@id='bsecp']");
-						
+
 						result = node[0].InnerText;
 						Console.WriteLine("Price for :" + eq.divUrl.Split('/')[5] + " Is:" + result.ToString());
 					}
-					catch(Exception ex)
+					catch (Exception ex)
 					{
 						result = doc.DocumentNode.SelectNodes("//*[@id='bsecp']")[0].InnerText;
 						Console.WriteLine("Price for :" + eq.divUrl.Split('/')[5] + " Is:" + result.ToString());
@@ -255,19 +252,19 @@ namespace Equity
 				}
 				return Convert.ToDouble(result);
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				return 0;
 			}
 		}
-		public void GetDividend(dividend d,string url)
+		public void GetDividend(dividend d, string url)
 		{
 			try
 			{
 				HtmlDocument doc = web.Load(url);
 				string result = "0";
 				Thread.Sleep(3000);
-				result = doc.DocumentNode.SelectNodes("//table[@class='mctable1']")[0].InnerText.Split(' ')[1];				 
+				result = doc.DocumentNode.SelectNodes("//table[@class='mctable1']")[0].InnerText.Split(' ')[1];
 			}
 			catch (Exception ex)
 			{
@@ -278,7 +275,7 @@ namespace Equity
 		public IList<EquityBase> GetEquityLinks()
 		{
 			IList<EquityBase> listPortfolio = new List<EquityBase>();
-			component.getMySqlObj().GetEquityDetails(listPortfolio) ;
+			component.getMySqlObj().GetEquityDetails(listPortfolio);
 			return listPortfolio.Distinct<EquityBase>(new EquityComparer()).ToList();
 		}
 
@@ -287,7 +284,7 @@ namespace Equity
 			IList<string> listOfProc = new List<string>();
 			try
 			{
-//				IList<string> listOfProc = new List<string>();
+				//				IList<string> listOfProc = new List<string>();
 				HtmlDocument doc = web.Load(EPROCUMENT_KARNATKA);
 				var listOfOffer = doc.DocumentNode.SelectNodes("//tbody[@id='eprocTenders:browserTableEprocTenders:tbody_element']//tr[@class='trobg1']//td[4]").ToList();
 				foreach (HtmlAgilityPack.HtmlNode node in listOfOffer)
@@ -361,7 +358,8 @@ namespace Equity
 						//GetROCEForCompany(CompanyMasterList, companyid.ToString(), companyname.ToString());
 					}
 				}
-			}catch(Exception ex)
+			}
+			catch (Exception ex)
 			{
 				throw ex;
 			}
@@ -377,11 +375,11 @@ namespace Equity
 		public void GetPortFolioDetails()
 		{
 			var document = LoadURL(PORTFOLIO_MONEYCONTROL);
-			var s=document.DocumentNode.SelectSingleNode("//div[@class='bgbl']//span[@id='networth_disp']");
-		} 
+			var s = document.DocumentNode.SelectSingleNode("//div[@class='bgbl']//span[@id='networth_disp']");
+		}
 
 		private HtmlDocument LoadURL(string url)
-		{			 
+		{
 			return web.Load(url);
 		}
 
@@ -420,7 +418,7 @@ namespace Equity
 			}
 
 		}
-		
-		
+
+
 	}
 }

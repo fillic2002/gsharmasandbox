@@ -1,19 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using DocumentFormat.OpenXml.Packaging;
 using Git_Sandbox.DailyRunJob;
 using Git_Sandbox.DailyRunJob.Business;
 using Microsoft.VisualBasic.FileIO;
-using myfinAPI.Model;
-using myfinAPI.Model.Domain;
 using myfinAPI.Model.DTO;
-using TinyCsvParser;
 //using Microsoft.Office.Interop.Excel;
 //using OfficeOpenXml;
 //using Range = Microsoft.Office.Interop.Excel.Range;
@@ -26,7 +19,7 @@ namespace Equity
 		//private Dictionary<double, string> _companyName = new Dictionary<double, string>();
 		//int startPoint = 3;
 		//int fetchTill = 2900;
-		
+
 		//Worksheet EQUITY_SHEET, ASSET_SHEET;
 		//Workbook wb;
 		//Workbook _assetWorkBook;
@@ -35,12 +28,12 @@ namespace Equity
 		//public Dictionary<double, Dictionary<int, string>> _roceList = new Dictionary<double, Dictionary<int, string>>();
 		//public List<double> _scriptList = new List<double>() { };
 
-	    string EQUITY_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
+		string EQUITY_FILE_PATH = ConfigurationManager.AppSettings["EQUITY_FILE_PATH"];
 
 		public string BOND_FILE_PATH = @"C:\Users\fillic\Downloads\SECURITY_LIST_DETAILS.csv";//ConfigurationManager.AppSettings["BOND_FILE_PATH"];	
-		public static string BOND_LIVE_PRICE = @"C:\Users\fillic\Downloads\MW-Bonds-on-CM-"+ DateTime.Now.ToString("dd-MMM-yyyy")+".csv";//ConfigurationManager.AppSettings["BOND_FILE_PATH"];
+		public static string BOND_LIVE_PRICE = @"C:\Users\fillic\Downloads\MW-Bonds-on-CM-" + DateTime.Now.ToString("dd-MMM-yyyy") + ".csv";//ConfigurationManager.AppSettings["BOND_FILE_PATH"];
 
-		public static Dictionary<string,int> bondColumnName;
+		public static Dictionary<string, int> bondColumnName;
 		public static Dictionary<string, int> bondLivePriceMapping;
 
 		string filePath = @"C:\Users\fillic\Downloads\OpTransactionHistory16-10-2023.csv";
@@ -63,7 +56,7 @@ namespace Equity
 			bondColumnName.Add("Instrument Status", 0);
 			bondColumnName.Add("First IP date", 0);
 			bondColumnName.Add("Security Description", 4);
-			 
+
 			bondLivePriceMapping = new Dictionary<string, int>();
 			bondLivePriceMapping.TryAdd("SYMBOL", 0);
 			bondLivePriceMapping.TryAdd("SERIES", 1);
@@ -226,61 +219,61 @@ namespace Equity
 
 		public string getMonth(int mnth)
 		{
-			string month= string.Empty;
-			switch(mnth)
+			string month = string.Empty;
+			switch (mnth)
 			{
 				case 1:
-					month= "Jan";
-				break;
+					month = "Jan";
+					break;
 
 				case 2:
-					month= "Feb";
+					month = "Feb";
 					break;
 
 				case 3:
-					month= "Mar";
+					month = "Mar";
 					break;
 
 				case 4:
-					month= "Apr";
+					month = "Apr";
 					break;
 
 				case 5:
-					month= "May";
+					month = "May";
 					break;
 
 				case 6:
-					month= "Jun";
+					month = "Jun";
 					break;
 				case 7:
-					month= "Jul";
+					month = "Jul";
 					break;
 
 				case 8:
-					month= "Aug";
+					month = "Aug";
 					break;
 
 				case 9:
-					month= "Sep";
+					month = "Sep";
 					break;
 
 				case 10:
-					month= "Oct";
+					month = "Oct";
 					break;
 
 				case 11:
-					month= "Nov";
+					month = "Nov";
 					break;
 
 				case 12:
-					month= "Dec";
+					month = "Dec";
 					break;
 			}
 			return month;
 		}
-		public void ReadBondData(IList<string> data,string filePath, Dictionary<string, int> mapping)
+		public void ReadBondData(IList<string> data, string filePath, Dictionary<string, int> mapping)
 		{
-			string[] lines = File.ReadAllLines(filePath);	 
+			string[] lines = File.ReadAllLines(filePath);
 			int lineNumber = 0;
 			//IList<string> data = new List<string>();
 			Dictionary<string, int> collection2 = new Dictionary<string, int>(mapping);
@@ -289,8 +282,8 @@ namespace Equity
 			foreach (string line in csvlines)
 			{
 				string[] item = line.Split(',');
-				
-				if(lineNumber==0)
+
+				if (lineNumber == 0)
 				{
 					foreach (var key in collection2.Keys)
 					{
@@ -308,27 +301,27 @@ namespace Equity
 					{
 						data.Add(line);
 					}
-					catch(Exception ex)
+					catch (Exception ex)
 					{
 						string s = ex.Message;
 					}
 				}
-			}	 
+			}
 
 		}
 		public double GetMonthlySharePrice(string companyid, int mnth, int year)
 		{
 			string[] lines = File.ReadAllLines(EQUITY_FILE_PATH);
-			double sharePrice=0;
+			double sharePrice = 0;
 			bool companyMatched = false;
 
 			foreach (string line in lines)
 			{
-				string[] item= line.Split(',');
-			
-				if(item[1] == "")
+				string[] item = line.Split(',');
+
+				if (item[1] == "")
 				{
-					
+
 					if (item[0] == companyid)
 						companyMatched = true;
 				}
@@ -373,29 +366,29 @@ namespace Equity
 			}
 			bool flagStart = false;
 			ExpenseDTO expenseDto;
-			int folioID =0;
+			int folioID = 0;
 			// Process the data as needed
 			foreach (string[] row in csvData)
 			{
-				if (row[1].Contains("Account Number") )
+				if (row[1].Contains("Account Number"))
 				{
 					if (row[3].Contains("GAURAV"))
 						folioID = 2;
 					else if (row[3].Contains("RENUKA"))
 						folioID = 1;
 				}
-				if (row[1].Contains("S No.") && flagStart==false)
+				if (row[1].Contains("S No.") && flagStart == false)
 				{
 					flagStart = true;
 					foreach (string field in row)
 					{
 						// Do something with each field in the row
-						Console.WriteLine(field)							;
-						
+						Console.WriteLine(field);
+
 					}
 					continue;
 				}
-				if(flagStart  && Convert.ToDouble(row[6]) >0)
+				if (flagStart && Convert.ToDouble(row[6]) > 0)
 				{
 					expenseDto = new ExpenseDTO();
 					expenseDto.amt = Convert.ToDouble(row[6]);

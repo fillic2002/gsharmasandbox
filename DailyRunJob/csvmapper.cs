@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Git_Sandbox.Model;
-using myfinAPI.Model;
+﻿using myfinAPI.Model;
 using TinyCsvParser.Mapping;
 
 namespace Git_Sandbox.DailyRunJob

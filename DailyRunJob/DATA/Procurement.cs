@@ -1,14 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-
-using Equity;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -20,7 +13,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 	{
 		//private string _eprocUrl ="https://eproc.karnataka.gov.in/eprocurement/common/eproc_tenders_list.seam";
 		//private string _eprocUrl = "https://eproc.karnataka.gov.in/eprocportal/pages/index.jsp";
-		private string _eprocUrl = "https://kppp.karnataka.gov.in/#/portal/searchTender/live";
+		private string _eprocUrl = "https://khb.karnataka.gov.in/info-3/E-AUCTION/en";
 		private string _atlasianUrl = "https://kppp.karnataka.gov.in/#/portal/searchTender/live";
 		IWebDriver _driver;
 		ChromeOptions chromeOptions;
@@ -61,7 +54,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			int i = 1;
 			while (true)
 			{
-				Console.WriteLine("Entering Page:"+i);
+				Console.WriteLine("Entering Page:" + i);
 				IList<IWebElement> txt = _driver.FindElements(By.XPath("//tr[@class='trobg1']//td[3]"));
 				IList<IWebElement> txt2 = _driver.FindElements(By.XPath("//tr[@class='trobg2']//td[3]"));
 				if (txt.Count == 0 && txt2.Count == 0)
@@ -110,30 +103,30 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					{
 						Dispose();
 						return;
-						
+
 					}
-						 
+
 				}
-				 
+
 			}
-			
+
 		}
 		public void ShowJobNotification()
 		{
 			_driver.Navigate().GoToUrl(_eprocUrl);
 			Thread.Sleep(1000);
 		}
-			public void ShowProcurementInfoNew()
+		public void ShowProcurementInfoNew()
 		{
-			  
+
 			_driver.Navigate().GoToUrl(_eprocUrl);
 			Thread.Sleep(1000);
-			ReadOnlyCollection<IWebElement> elements=_driver.FindElements(By.XPath("//div[contains(@class, 'language') and contains(@class, 'language-ka')]"));
+			ReadOnlyCollection<IWebElement> elements = _driver.FindElements(By.XPath("//div[contains(@class, 'language') and contains(@class, 'language-ka')]"));
 			foreach (IWebElement element in elements)
 			{
 				Console.WriteLine(element.Text);
 				element.Click();
-				 
+
 			}
 			Thread.Sleep(15000);
 			ReadOnlyCollection<IWebElement> selectElements = _driver.FindElements(By.Id("departmentstatusSelect"));
@@ -142,7 +135,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			SelectElement select = new SelectElement(selectElement);
 			select.SelectByText("KHB - Karnataka Housing Board");
 			ReadOnlyCollection<IWebElement> optionElements = selectElement.FindElements(By.TagName("option"));
-			
+
 			IWebElement selectElement1 = _driver.FindElement(By.Id("tenderstatusdropdownSelect"));
 			SelectElement select1 = new SelectElement(selectElement1);
 			select.SelectByText("Published");

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Equity;
+﻿using Equity;
 using Git_Sandbox.DailyRunJob.Business;
 using Git_Sandbox.DailyRunJob.DATA;
-using api= myfinAPI.Data;
+using api = myfinAPI.Data;
 using business = myfinAPI.Business;
 using WebScrapper = Git_Sandbox.DailyRunJob.DATA.WebScrapper;
 
@@ -19,15 +16,18 @@ namespace Git_Sandbox.DailyRunJob
 		static Procurement _eprocObj;
 		static api.mysqlContext _sqlContext;
 		static BondsHelper _bondObject;
+		static AccountHelper _accountObj;
 		static api.BondsContext _bondContext;
+		static business.InvestHelper _invstHelper;
 
 		// Borrowed from Myfin binary
 		static business.BondsHelper _bondBusinessHelper;
 		static business.Equity _equityBusinessHelper;
 		static business.PortfoliMgmt _portfolioHelper;
 		
+
 		static Git_Sandbox.DailyRunJob.Business.Expense _expenselHelper;
-		
+
 
 		public static business.PortfoliMgmt getPortfolioHelperObj()
 		{
@@ -57,12 +57,26 @@ namespace Git_Sandbox.DailyRunJob
 
 			return _bondContext;
 		}
+		public static AccountHelper getAccountObj()
+		{
+			if (_accountObj == null)
+				_accountObj = new AccountHelper();
+
+			return _accountObj;
+		}
 		public static BondsHelper getBondsObj()
 		{
 			if (_bondObject == null)
 				_bondObject = new BondsHelper();
 
 			return _bondObject;
+		}
+		public static business.InvestHelper getInvestHelper()
+		{
+			if (_invstHelper == null)
+				_invstHelper = new business.InvestHelper();
+
+			return _invstHelper;
 		}
 		public static api.mysqlContext getDBContextObj()
 		{
@@ -94,7 +108,7 @@ namespace Git_Sandbox.DailyRunJob
 		}
 		public static WebScrapper getWebScrappertObj()
 		{
-			if (_webObj== null)
+			if (_webObj == null)
 				_webObj = new WebScrapper();
 
 			return _webObj;

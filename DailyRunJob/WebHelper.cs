@@ -4,10 +4,7 @@ using System.Collections.Generic;
 
 using System.Reflection;
 using Git_Sandbox.DailyRunJob;
-using Git_Sandbox.Model;
 using HtmlAgilityPack;
-using Microsoft.Office.Interop.Excel;
-using Range = Microsoft.Office.Interop.Excel.Range;
 
 namespace DailyRunEquity
 {
@@ -53,17 +50,17 @@ namespace DailyRunEquity
 		//Microsoft.Office.Interop.Excel.Worksheet sh;
 		//Microsoft.Office.Interop.Excel.Worksheet _boughtByBulls;
 
-		public SortedDictionary<double,string> CompanyName
+		public SortedDictionary<double, string> CompanyName
 		{
-			get{ return _companyName; }
-			set{ _companyName = value; }
+			get { return _companyName; }
+			set { _companyName = value; }
 		}
 
 		public WebHelper()
 		{
 			//string filePath = @"C:\d\Personal\Doc\Equity.xlsx";
 			//Microsoft.Office.Interop.Excel.Application ExcelApp = new Microsoft.Office.Interop.Excel.Application();
-			
+
 			//wb = ExcelApp.Workbooks.Open(filePath, Missing.Value, false, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value, Missing.Value);
 			//sh = (Microsoft.Office.Interop.Excel.Worksheet)wb.Sheets["Equity"];
 			//_boughtByBulls = (Microsoft.Office.Interop.Excel.Worksheet)wb.Sheets["BoughtByBulls"];
@@ -72,7 +69,7 @@ namespace DailyRunEquity
 		{
 			try
 			{
-				
+
 				string url = "http://www.bseindia.com/stock-share-price/stockreach_financials.aspx?scripcode=" + script.ToString() + "&expandable=0";
 
 				_firstYear = String.Empty;
@@ -83,7 +80,7 @@ namespace DailyRunEquity
 				HtmlAgilityPack.HtmlDocument doc = web.Load(url);
 
 				string NPM = doc.DocumentNode.SelectNodes("//div[contains(@id, 'ctl00_ContentPlaceHolder1_quatre')]//table//tr[17]//td[1]")[0].InnerText;
-				
+
 				if (NPM == "NPM %")
 				{
 					var _firstYear = doc.DocumentNode.SelectNodes("//div[contains(@id, 'ctl00_ContentPlaceHolder1_quatre')]//table//tr[17]//td[2]")[0].InnerText;
@@ -95,9 +92,9 @@ namespace DailyRunEquity
 							_thirdYear = doc.DocumentNode.SelectNodes("//div[contains(@id, 'ctl00_ContentPlaceHolder1_quatre')]//table//tr[19]//td[4]")[0].InnerText;
 						}
 					}
-				}			
+				}
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				Console.WriteLine("Exception for item:" + script);
 			}
@@ -118,29 +115,29 @@ namespace DailyRunEquity
 					values.Add(15, revTillDate.ToString());
 					_masterScriptList[scriptid] = values;
 
-				Console.Write(i++);
+					Console.Write(i++);
 				}
 				catch (Exception ex)
 				{
-					if(ex.Message.Contains("Input string was not in a correct format."))
+					if (ex.Message.Contains("Input string was not in a correct format."))
 					{
-					Console.WriteLine("Known Error");
+						Console.WriteLine("Known Error");
 					}
 
 				}
 			}
-			
+
 			SaveToEquityFile();
 			//ExcelApp.Quit();
 		}
-	
+
 		public void GetBalanceSheetDetails(double script)
 		{
 			string url = "http://www.bseindia.com/stock-share-price/stockreach_financials.aspx?scripcode=" + script.ToString() + "&expandable=0";
 
-			_y2012= String.Empty;
-			_y2013= String.Empty;
-			_y2014= String.Empty;
+			_y2012 = String.Empty;
+			_y2013 = String.Empty;
+			_y2014 = String.Empty;
 			_y2015 = String.Empty;
 			_y2016 = String.Empty;
 
@@ -178,7 +175,7 @@ namespace DailyRunEquity
 			catch (Exception ex)
 			{
 				Console.WriteLine(ex.StackTrace);
-				
+
 			}
 
 		}
@@ -231,7 +228,7 @@ namespace DailyRunEquity
 		{
 			try
 			{
-				string url = "http://www.bseindia.com/corporates/shpSecurities.aspx?scripcd="+ script.ToString() +"&monthid="+ q +"&Flag=New";
+				string url = "http://www.bseindia.com/corporates/shpSecurities.aspx?scripcd=" + script.ToString() + "&monthid=" + q + "&Flag=New";
 
 				_lastQ = String.Empty;
 				_secondLastQ = String.Empty;
@@ -240,7 +237,7 @@ namespace DailyRunEquity
 				HtmlWeb web = new HtmlWeb();
 				HtmlAgilityPack.HtmlDocument doc = web.Load(url);
 
-				 
+
 				string Promotor = doc.DocumentNode.SelectNodes("//div[contains(@id, 'tdData')]//table//tr[3]//table//tr[4]//td[1]")[0].InnerText;
 				if (Promotor == "(A) Promoter & Promoter Group")
 				{
@@ -257,7 +254,7 @@ namespace DailyRunEquity
 		}
 
 		public void GenerateScriptList()
-		{			
+		{
 			//for (int i = startPoint; i < fetchTill; i++)
 			//{
 			//	Range script = (Range)sh.Cells[i, 1];
@@ -267,12 +264,12 @@ namespace DailyRunEquity
 			//	{
 			//		_masterScriptList.Add((double)script.Value2, new Dictionary<int, string>());
 			//		_scriptList.Add((double)script.Value2);
-					 
+
 			//	}
 			//}
 			//ExcelApp.Quit();
 		}
-		 
+
 		public void ReadAllScript()
 		{
 			string filePath = @"C:\d\Personal\Doc\Equity.xlsx";
@@ -294,7 +291,7 @@ namespace DailyRunEquity
 				//Revenue details
 				Microsoft.Office.Interop.Excel.Range y2016 = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 21];
 				Microsoft.Office.Interop.Excel.Range y2015 = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 22];
-				Microsoft.Office.Interop.Excel.Range y2014= (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 23];
+				Microsoft.Office.Interop.Excel.Range y2014 = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 23];
 				Microsoft.Office.Interop.Excel.Range y2013 = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 24];
 				Microsoft.Office.Interop.Excel.Range y2012 = (Microsoft.Office.Interop.Excel.Range)sh.Cells[i, 25];
 
@@ -309,12 +306,12 @@ namespace DailyRunEquity
 						//thirdYearRange.Value2 = _thirdYear; //GetShareHoldingPattern((double)range.Value2, "89.00");
 						#endregion
 						#region Get last five year revenue
-							GetBalanceSheetDetails((double)range.Value2);
-							y2016.Value2 = _y2016;
-							y2015.Value2 = _y2015;
-							y2014.Value2 = _y2014;
-							y2013.Value2 = _y2013;
-							y2012.Value2 = _y2012;
+						GetBalanceSheetDetails((double)range.Value2);
+						y2016.Value2 = _y2016;
+						y2015.Value2 = _y2015;
+						y2014.Value2 = _y2014;
+						y2013.Value2 = _y2013;
+						y2012.Value2 = _y2012;
 						#endregion
 						//catch(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
 						//{
@@ -325,7 +322,7 @@ namespace DailyRunEquity
 
 					}
 				}
-			 
+
 				Console.Write(i + "-");
 			}
 
@@ -378,7 +375,7 @@ namespace DailyRunEquity
 					}
 					else if (DateTime.FromOADate((double)y.Value2) >= fy2012)
 					{
-						y2012Closing +=(double)c.Value2;
+						y2012Closing += (double)c.Value2;
 						Days2012++;
 						continue;
 					}
@@ -412,15 +409,15 @@ namespace DailyRunEquity
 				HtmlAgilityPack.HtmlDocument doc = web.Load(url);
 				try
 				{
-					
+
 					string y1 = doc.DocumentNode.SelectNodes("//div[contains(@id, 'ctl00_ContentPlaceHolder1_anntre')]//table//tr//td//table//tr//td[2]")[0].InnerText;
 					if (y1 == "2016")
 					{
 						Dictionary<int, string> CellToModify = new Dictionary<int, string>();
 						_y2016 = doc.DocumentNode.SelectNodes("//div[contains(@id, 'ctl00_ContentPlaceHolder1_anntre')]//table//tr//td//table//tr//td[2]")[0].InnerText;
 						_eps16 = doc.DocumentNode.SelectNodes("//div[contains(@id, 'ctl00_ContentPlaceHolder1_anntre')]//table//tr[1]//td[1]//table//tr[14]//td[2]")[0].InnerText;
-						string interest16  = doc.DocumentNode.SelectNodes("//div[contains(@id, 'ctl00_ContentPlaceHolder1_anntre')]//table//tr[1]//td[1]//table//tr[7]//td[2]")[0].InnerText;
-						CellToModify.Add(10,interest16);
+						string interest16 = doc.DocumentNode.SelectNodes("//div[contains(@id, 'ctl00_ContentPlaceHolder1_anntre')]//table//tr[1]//td[1]//table//tr[7]//td[2]")[0].InnerText;
+						CellToModify.Add(10, interest16);
 						CellToModify.Add(30, _eps16);
 
 						_masterScriptList[scripid] = CellToModify;
@@ -479,7 +476,7 @@ namespace DailyRunEquity
 				}
 			}
 		}
-		
+
 
 		public void SaveToEquityFile()
 		{
@@ -495,7 +492,7 @@ namespace DailyRunEquity
 			//	cell++;
 			//}
 
-			
+
 			//wb.Save();
 			//ExcelApp.Quit();
 		}
@@ -512,7 +509,7 @@ namespace DailyRunEquity
 			//		Console.WriteLine("Script Added" + i);
 			//	}			
 			//}
-			 
+
 			//ExcelApp.Quit();
 			//Console.WriteLine("Total Script Added" + _currentValues.Count);
 		}
@@ -538,16 +535,16 @@ namespace DailyRunEquity
 				if (script <= 532416)
 					continue;
 
-				string url = "http://www.bseindia.com/stock-share-price/stockreach_bulkblock.aspx?scripcode="+ script + "&expandable=9";				
+				string url = "http://www.bseindia.com/stock-share-price/stockreach_bulkblock.aspx?scripcode=" + script + "&expandable=9";
 				HtmlAgilityPack.HtmlDocument doc = web.Load(url);
 				try
 				{
 					int i = 2;
-					
-					 
+
+
 					while (true)
 					{
-						string buyer = doc.DocumentNode.SelectNodes("//table[contains(@id, 'ctl00_ContentPlaceHolder1_gvData')]//tr["+ i +"]//td[2]")[0].InnerText;
+						string buyer = doc.DocumentNode.SelectNodes("//table[contains(@id, 'ctl00_ContentPlaceHolder1_gvData')]//tr[" + i + "]//td[2]")[0].InnerText;
 						if (buyer.Trim() == "PORINJUV VELIYATH" || buyer == "RAKESH RADHEYSHYAM JHUNJHUNWALA")
 						{
 							Console.Write(rowid);
@@ -558,16 +555,16 @@ namespace DailyRunEquity
 							//bullname.Value2 = buyer;
 							//dataid++;
 							//wb.Save();
-							 
-							
+
+
 						}
 						i++;
 					}
-					
+
 				}
-				catch(Exception ex)
-				{					
-					
+				catch (Exception ex)
+				{
+
 					continue;
 				}
 			}
@@ -577,7 +574,7 @@ namespace DailyRunEquity
 		public void GetProcurementDetails()
 		{
 			component.getEprocObj().ShowProcurementInfoNew();
-			 
+
 		}
 		public void GetJobNotification()
 		{

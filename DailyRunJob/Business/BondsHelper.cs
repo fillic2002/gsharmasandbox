@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Equity;
 using myfinAPI.Model.DTO;
 using static myfinAPI.Business.Xirr;
@@ -16,20 +13,21 @@ namespace Git_Sandbox.DailyRunJob.Business
 	public class BondsHelper
 	{
 		StringBuilder faultyISIN = new StringBuilder();
-		List<Bond> bondMasterlist= new List<Bond>();
+		List<Bond> bondMasterlist = new List<Bond>();
 		const string bondLivePriceFile = @"C:\Users\fillic\Downloads\MW-Bonds-on-CM-"; //27-Nov-2022.csv
 
 		public void CalculateBondIntrest()
 		{
 			IList<BondTransaction> bondTran = new List<BondTransaction>();
-			IList<BondIntrest> bondIntrst; 
+			IList<BondIntrest> bondIntrst;
 
 			component.getBondBusinessHelperObj().GetBondTransaction(0, bondTran);
 			bondTran.ToList().ForEach(x =>
 			{
+				
 				bondIntrst = new List<BondIntrest>();
-				component.getBondContextObj().getBondIntrestForTransaction(bondIntrst,x, x.folioId);
-				if(bondIntrst.Count<=0)
+				component.getBondContextObj().getBondIntrestForTransaction(bondIntrst, x, x.folioId);
+				if (bondIntrst.Count <= 0)
 					component.getBondBusinessHelperObj().UpdateBondyIntrestPayment(x);
 			});
 		}
@@ -38,14 +36,14 @@ namespace Git_Sandbox.DailyRunJob.Business
 		{
 			try
 			{
-				string fullName = bondLivePriceFile + DateTime.Now.ToString("dd-MMM-yyyy") + ".csv";				
+				string fullName = bondLivePriceFile + DateTime.Now.ToString("dd-MMM-yyyy") + ".csv";
 				if (File.Exists(fullName))
 				{
 					GetBondLivePriceFromNSEFile(bondFromAllExcel);
 				}
 				else
 					return;
-			 //foreach(Bond b in bondFromAllExcel)
+				//foreach(Bond b in bondFromAllExcel)
 				//{
 				//	double livePr= b.LivePrice;
 				//	component.getBondBusinessHelperObj().SearchBondDetails(b);
@@ -69,9 +67,9 @@ namespace Git_Sandbox.DailyRunJob.Business
 			{
 				Console.WriteLine(e.Message);
 				//component.getWebScrappertObj().Dispose();
-			}		
+			}
 		}
-		 
+
 		private bool ValidateBondAndSave(IList<Bond> bondDetailsFromWeb, List<Bond> bondFromAllExcel)
 		{
 			foreach (Bond b in bondDetailsFromWeb)
@@ -81,7 +79,7 @@ namespace Git_Sandbox.DailyRunJob.Business
 				{
 					result.LivePrice = b.LivePrice;
 					result.symbol = b.symbol;
-					
+
 					component.getBondContextObj().UpdateBondLivePrice(result);
 					Console.ForegroundColor = ConsoleColor.Green;
 					Console.WriteLine(result.BondId + " Added Successfully");
@@ -91,7 +89,7 @@ namespace Git_Sandbox.DailyRunJob.Business
 				else
 				{
 					Console.ForegroundColor = ConsoleColor.Red;
-					faultyISIN.Append(b.BondId+",");
+					faultyISIN.Append(b.BondId + ",");
 					Console.WriteLine("Bond Does not exist in master list" + b.BondId);
 					Console.ResetColor();
 					//Thread.Sleep(1500);
@@ -102,10 +100,10 @@ namespace Git_Sandbox.DailyRunJob.Business
 			//component.getBondBusinessHelperObj().UpdateBondPrice(existingBondDetails);
 		}
 		public void LoadBondDetails()
-		{			 
+		{
 			List<Bond> bondDetails = new List<Bond>();
 			IList<CashItem> cashFlow = new List<CashItem>();
-			if(DateTime.UtcNow.Day<15)
+			if (DateTime.UtcNow.Day < 15)
 				GetBondMasterListFromNSDL();
 
 			ReadBondLivePriceFromExcel(bondDetails);
@@ -119,10 +117,10 @@ namespace Git_Sandbox.DailyRunJob.Business
 				component.getBondBusinessHelperObj().SearchBondDetails(b);
 				if (b.LivePrice == livePr) //If the price already updated no need to update again
 					continue;
-				b.LivePrice = livePr;	
-				
+				b.LivePrice = livePr;
+
 				component.getBondBusinessHelperObj().CalculateYTMXirr(b, cashFlow);
-				component.getBondBusinessHelperObj().SaveBondDetails(b);
+				component.getBondContextObj().SaveliveBondDetails(b);
 
 				Console.ForegroundColor = ConsoleColor.DarkYellow;
 				Console.WriteLine(b.BondName + "-" + b.BondId + "::" + b.YTM);
@@ -138,7 +136,7 @@ namespace Git_Sandbox.DailyRunJob.Business
 
 		}
 
-		 
+
 
 		private void GetBondLivePriceFromNSEFile(List<Bond> bondDetails)
 		{
@@ -153,52 +151,57 @@ namespace Git_Sandbox.DailyRunJob.Business
 					string temp = line;
 					Console.WriteLine(line);
 					int Index = 0;
-					int pointer = 0;int startIndex = 0;
+					int pointer = 0; int startIndex = 0;
 					decimal liveP = 0;
 					decimal coupon = 0;
 					decimal fv = 0;
 					string sym = "";
 					string ser = "";
-					DateTime maturity= new DateTime();
+					DateTime maturity = new DateTime();
 					while (Index <= 10)
 					{
 						pointer = temp.TrimStart(',').IndexOf("\"", startIndex + 1);
-						var vla = temp.TrimStart(',').Substring(startIndex+1, pointer - startIndex-1);
-						if(Index==0)
+						var vla = temp.TrimStart(',').Substring(startIndex + 1, pointer - startIndex - 1);
+						if (Index == 0)
 						{
 							sym = vla;
-						}else if(Index==5)
+						}
+						else if (Index == 5)
 						{
 							liveP = Convert.ToDecimal(vla);
-						}else if (Index == 3)
+						}
+						else if (Index == 3)
 						{
 							coupon = Convert.ToDecimal(vla);
-						}else if (Index == 4)
+						}
+						else if (Index == 4)
 						{
 							fv = Convert.ToDecimal(vla);
-						}else if (Index == 1)
+						}
+						else if (Index == 1)
 						{
 							ser = vla;
-						}else if (Index == 10)
+						}
+						else if (Index == 10)
 						{
 							maturity = Convert.ToDateTime(vla.ToString());
 						}
 
 						Index++;
-						temp = temp.Substring(pointer+2);
-						
-					}				 
-					 
+						temp = temp.Substring(pointer + 2);
+
+					}
+
 					bondDetails.Add(new Bond()
 					{
 						LivePrice = liveP,
 						BondName = sym,
-						 BondId = sym+"-"+ser,
-						  couponRate = coupon,
-						  faceValue = fv,
-						  dateOfMaturity = maturity,
-						  issuer=sym,
-						  symbol=ser
+						BondId = sym + "-" + ser,
+						couponRate = coupon,
+						faceValue = fv,
+						dateOfMaturity = maturity,
+						issuer = sym,
+						symbol = ser
 
 					});
 				}
@@ -209,14 +212,14 @@ namespace Git_Sandbox.DailyRunJob.Business
 				}
 			}
 		}
-		private static object SanitizeData(string fieldData,Type t)
+		private static object SanitizeData(string fieldData, Type t)
 		{
-			if(t.Name =="DateTime")
-			{				
+			if (t.Name == "DateTime")
+			{
 				var s = Regex.Replace(fieldData.ToString(), @"[^0-9a-zA-Z]+", "-");
 				if (s == "-")
-					s = s.Replace('-',' ');
-				fieldData =string.IsNullOrEmpty( s.Trim())? new DateTime(1001, 1, 1).ToString() : s;
+					s = s.Replace('-', ' ');
+				fieldData = string.IsNullOrEmpty(s.Trim()) ? new DateTime(1001, 1, 1).ToString() : s;
 				return fieldData;
 			}
 			if (t.Name == "String")
@@ -234,11 +237,11 @@ namespace Git_Sandbox.DailyRunJob.Business
 		private void GetBondMasterListFromNSDL()
 		{
 			IList<string> data = new List<string>();
-			component.getExcelHelperObj().ReadBondData(data,component.getExcelHelperObj().BOND_FILE_PATH, ExcelHelper.bondColumnName);
-			var s= ExcelHelper.bondColumnName;
+			component.getExcelHelperObj().ReadBondData(data, component.getExcelHelperObj().BOND_FILE_PATH, ExcelHelper.bondColumnName);
+			var s = ExcelHelper.bondColumnName;
 			int i = 0;
 			foreach (string line in data)
-			{		
+			{
 				try
 				{
 					string[] item = line.Split(',');
@@ -247,15 +250,15 @@ namespace Git_Sandbox.DailyRunJob.Business
 						if (item[19] == "Active")
 						{
 							string isin = SanitizeData(item[s["ISIN"]], typeof(string)).ToString();
-							DateTime doa =Convert.ToDateTime(SanitizeData(item[s["Date of Allotment"]], typeof(DateTime)));
+							DateTime doa = Convert.ToDateTime(SanitizeData(item[s["Date of Allotment"]], typeof(DateTime)));
 							DateTime dom = Convert.ToDateTime(SanitizeData(item[s["Date of Redemption/Conversion"]], typeof(DateTime)));
-							string bondName = item[s["Security Description"]].ToString().Replace('\'',' ');
-							bool num=IsNumeric(item[s["Coupon Rate (%)"]].Replace('%',' '));
-							string coupon = num==true?item[s["Coupon Rate (%)"]].Replace('%',' '):"0";
+							string bondName = item[s["Security Description"]].ToString().Replace('\'', ' ');
+							bool num = IsNumeric(item[s["Coupon Rate (%)"]].Replace('%', ' '));
+							string coupon = num == true ? item[s["Coupon Rate (%)"]].Replace('%', ' ') : "0";
 							string intrestCycle = item[s["Frequency of Interest Payment"]].ToString();
 							string rating = item[s["Credit Rating"]].ToString();
 							double faceVal = Convert.ToDouble(item[s["Face Value (In Rs.)"]]);
-							
+
 							if (Convert.ToDateTime(dom) >= DateTime.UtcNow)
 							{
 								Bond bondNew = new Bond()
@@ -271,9 +274,9 @@ namespace Git_Sandbox.DailyRunJob.Business
 									//firstIPDate = DateTime.Parse(firstIPDt.ToString())
 								};
 								bondMasterlist.Add(bondNew);
-								if (component.getBondBusinessHelperObj().SearchBondDetails(bondNew)==null)
+								if (component.getBondBusinessHelperObj().SearchBondDetails(bondNew) == null)
 								{
-									if (component.getBondBusinessHelperObj().SaveBondDetails(bondNew) != true)
+									if (component.getBondContextObj().SaveliveBondDetails(bondNew) != true)
 									{
 										Console.Write("Failed to Save");
 										Console.WriteLine(line);
@@ -284,11 +287,11 @@ namespace Git_Sandbox.DailyRunJob.Business
 						}
 						else
 							continue;
-					}				 
+					}
 				}
-				catch(Exception ex)
+				catch (Exception ex)
 				{
-					var sa= ex.Message;
+					var sa = ex.Message;
 					continue;
 				}
 			}

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Git_Sandbox.DailyRunJob.Business
 {
@@ -12,7 +10,8 @@ namespace Git_Sandbox.DailyRunJob.Business
 			{
 				component.getExcelHelperObj().ReadExpenseDetails();
 			}
-			catch {
+			catch
+			{
 				Console.WriteLine("NO BANK ACCOUNT FILE FOUND.");
 			}
 		}

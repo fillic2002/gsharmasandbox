@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Equity
 {
 	public class CompanySearchEntity
 	{
-		public Suggest obj; 
+		public Suggest obj;
 
 	}
 	public class Suggest

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Git_Sandbox.Model
+﻿namespace Git_Sandbox.Model
 {
 	//public class EquityTransaction
 	//{
@@ -14,7 +10,7 @@ namespace Git_Sandbox.Model
 	//	public tranType TypeofTransaction { get; set; }
 	//	public double? PB { get; set; }
 	//	public double? MC { get; set; }
-		
+
 	//}
 	//public enum tranType
 	//{

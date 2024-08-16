@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Text;
 using Git_Sandbox.DailyRunJob.Contract;
 using Git_Sandbox.Model;
 using myfinAPI.Model;
@@ -35,23 +33,23 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"UPDATE myfin.equitydetails SET liveprice = " + eq.livePrice + "," +
-									" dtupdated ='" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + "', pb= "+eq.PB+", " +
-									" marketcap="+eq.MarketCap+",Totalshare="+eq.freefloat +" WHERE ISIN = '" + eq.assetId + "';", _conn);
+									" dtupdated ='" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + "', pb= " + eq.PB + ", " +
+									" marketcap=" + eq.MarketCap + ",Totalshare=" + eq.freefloat + " WHERE ISIN = '" + eq.assetId + "';", _conn);
 
 				int result = command.ExecuteNonQuery();
 				Console.ForegroundColor = ConsoleColor.Green;
-				Console.WriteLine("Updated company::" + eq.equityName + ":: Price::" + eq.livePrice+", PB::"+ eq.PB +",MarketCap::"+eq.MarketCap);
+				Console.WriteLine("Updated company::" + eq.equityName + ":: Price::" + eq.livePrice + ", PB::" + eq.PB + ",MarketCap::" + eq.MarketCap);
 				Console.ResetColor();
 			}
 			return true;
 		}
 		public bool UpdateCompanyDetail(EquityBase eq)
 		{
-			
+
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"UPDATE myfin.equitydetails SET divLink = '" + eq.divUrl+ "'," +
+				using var command = new MySqlCommand(@"UPDATE myfin.equitydetails SET divLink = '" + eq.divUrl + "'," +
 									" description='" + eq.sourceurl + "' WHERE (ISIN = '" + eq.assetId + "');", _conn);
 
 				int result = command.ExecuteNonQuery();
@@ -61,19 +59,19 @@ namespace Git_Sandbox.DailyRunJob.DATA
 		public decimal GetLatesNAV(string equityId)
 		{
 			decimal result = 0;
-			
+
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"SELECT liveprice FROM myfin.equitydetails" +
 									" WHERE ISIN = '" + equityId + "';", _conn);
 
-				 result = Convert.ToDecimal(command.ExecuteScalar());
+				result = Convert.ToDecimal(command.ExecuteScalar());
 			}
 			return result;
 		}
 
-		public void GetEquityDetails(IList<EquityBase> eq) 
+		public void GetEquityDetails(IList<EquityBase> eq)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
@@ -82,25 +80,33 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						where myfin.equitydetails.description IS NOT NULL;", _conn);
 				using var reader = command.ExecuteReader();
 				//IList<EquityBase> eq = new List<EquityBase>();
-				while (reader.Read())
+				try
 				{
-					DateTime tim = new DateTime(1000, 1, 1);
-					var ss = reader["dtupdated"];
-					if (ss.ToString() != "")
-						tim = Convert.ToDateTime(reader["dtupdated"]);
-					
-					eq.Add(new EquityBase()
+					while (reader.Read())
 					{
-						assetId = reader["isin"].ToString(),
-						sourceurl = reader["description"].ToString(),
-						assetType = (AssetType)((int)reader["assettypeid"]),
-						divUrl = reader["divlink"].ToString(),						
-						lastUpdated =tim,
-						equityName = reader["name"].ToString(),
-						livePrice = Convert.ToDecimal(reader["liveprice"].ToString()),
-						PB = Convert.ToDecimal(reader["pb"].ToString()),
-						MarketCap= Convert.ToDecimal(reader["marketcap"].ToString()),
-					});
+						DateTime tim = new DateTime(1000, 1, 1);
+						var ss = reader["dtupdated"];
+						if (ss.ToString() != "")
+							tim = Convert.ToDateTime(reader["dtupdated"]);
+
+						eq.Add(new EquityBase()
+						{
+							assetId = reader["isin"].ToString(),
+							sourceurl = reader["description"].ToString(),
+							assetType = (AssetType)((int)reader["assettypeid"]),
+							divUrl = reader["divlink"].ToString(),
+							lastUpdated = tim,
+							equityName = reader["name"].ToString(),
+							livePrice = Convert.ToDecimal(reader["liveprice"].ToString()),
+							PB = string.IsNullOrEmpty(reader["pb"].ToString()) == true ? 0 : Convert.ToDecimal(reader["pb"]),
+							MarketCap = string.IsNullOrEmpty(reader["marketcap"].ToString()) == true ? 0 : Convert.ToDecimal(reader["marketcap"]),
+						});
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(reader["marketcap"].ToString());
+					Console.WriteLine(reader["pb"]);
 				}
 				//return eq;
 			}
@@ -134,37 +140,37 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE into myfin.dividend(isin,dividend,dtupdated,lastcrawleddt,typeofcredit) 
-						values('" + item.companyid+"','"+item.value+"','"+item.dtUpdated.ToString("yyyy-MM-dd") + "','" +
-						item.lastCrawledDate.ToString("yyyy-MM-dd HH:mm:ss") + "',"+(int)item.creditType+");", _conn);
-				int  reader = command.ExecuteNonQuery();
+						values('" + item.companyid + "','" + item.value + "','" + item.dtUpdated.ToString("yyyy-MM-dd") + "','" +
+						item.lastCrawledDate.ToString("yyyy-MM-dd HH:mm:ss") + "'," + (int)item.creditType + ");", _conn);
+				int reader = command.ExecuteNonQuery();
 				Console.ForegroundColor = ConsoleColor.Green;
-				Console.WriteLine(item.companyid + " Dividend Added Successfully for:: "+item.dtUpdated);
+				Console.WriteLine(item.companyid + " Dividend Added Successfully for:: " + item.dtUpdated);
 				Console.ResetColor();
 				return true;
 			}
 		}
-		 
+
 		public void GetEquityDetails(IList<dividend> item)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				
+
 				using var command = new MySqlCommand(@"select * from myfin.equitydetails where description is not null and Assettypeid=1;", _conn);
 				using var reader = command.ExecuteReader();
 
 				while (reader.Read())
 				{
 					item.Add(new dividend()
-					{						
-						companyid= reader["isin"].ToString(),
+					{
+						companyid = reader["isin"].ToString(),
 					});
 				}
 			}
 		}
 		public void GetTransactions(IList<EquityTransaction> p, int portfolioId)
 		{
-			 
+
 			try
 			{
 				using (MySqlConnection _conn = new MySqlConnection(connString))
@@ -197,13 +203,13 @@ namespace Git_Sandbox.DailyRunJob.DATA
 						//{
 						//	Console.WriteLine("IN");
 						//}
-						
+
 						p.Add(new EquityTransaction()
 						{
 							equity = new EquityBase()
 							{
 								assetId = reader["isin"].ToString(),
-								livePrice = Convert.ToDecimal(reader["liveprice"]),								
+								livePrice = Convert.ToDecimal(reader["liveprice"]),
 								equityName = reader["name"].ToString(),
 								divUrl = reader["divlink"].ToString(),
 								MarketCap = Convert.ToDecimal(reader["eqtmc"]),
@@ -219,12 +225,12 @@ namespace Git_Sandbox.DailyRunJob.DATA
 							qty = Convert.ToInt32(reader["qty"]),
 							MarketCap_Tran = Convert.ToDecimal(reader["marketcap"]),
 							PB_Tran = Convert.ToDecimal(reader["pb"]),
-							freefloat_tran = Convert.ToDecimal(reader["openshare"] is DBNull?0: reader["openshare"]),
+							freefloat_tran = Convert.ToDecimal(reader["openshare"] is DBNull ? 0 : reader["openshare"]),
 						});
 					}
 				}
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				string m = ex.Message;
 			}
@@ -261,7 +267,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				_conn.Open();
 				string dt = tran.tranDate.ToString("yyyy-MM-dd");
 				using var command = new MySqlCommand(@"UPDATE myfin.equitytransactions 
-								SET pb= "+tran.PB_Tran+" , marketcap="+tran.MarketCap_Tran+", OpenShare="+tran.equity.freefloat+" WHERE ISIN='"+tran.equity.assetId + "' AND transactiondate='"+dt+"';", _conn);
+								SET pb= " + tran.PB_Tran + " , marketcap=" + tran.MarketCap_Tran + ", OpenShare=" + tran.equity.freefloat + " WHERE ISIN='" + tran.equity.assetId + "' AND transactiondate='" + dt + "';", _conn);
 				int result = command.ExecuteNonQuery();
 			}
 			return true;
@@ -279,8 +285,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				while (reader.Read())
 				{
 					p.Add(new propertyTransaction()
-					{					 
-						astType = (myfinAPI.Model.AssetClass.AssetType)Convert.ToInt32(reader["assettype"]),					 
+					{
+						astType = (myfinAPI.Model.AssetClass.AssetType)Convert.ToInt32(reader["assettype"]),
 						astvalue = Convert.ToDecimal(reader["currentvalue"]),
 						portfolioId = Convert.ToInt16(reader["portfolioid"]),
 						TransactionDate = Convert.ToDateTime(reader["dtofpurchase"]),
@@ -291,29 +297,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 		}
-		public void GetPFSnapshot(IList<AssetHistory> h, int portfolioId)
-		{
-			//using (MySqlConnection _conn = new MySqlConnection(connString))
-			//{
-			//	_conn.Open();
-			//	using var command = new MySqlCommand(@"SELECT myfin.assetsnapshot(portfolioid,year,month,assettype,assetvalue,dividend,invstmt)
-			//				values( select " + portfolioId + ",YEAR(dateoftransaction),MONTH(dateoftransaction),useracctid ,amt,0,0 from myfin.bankdetail;", _conn);
-			//	using var reader = command.ExecuteReader();
-
-			//	while (reader.Read())
-			//	{
-			//		p.Add(new propertyTransaction()
-			//		{
-			//			astType = (AssetType)Convert.ToInt32(reader["assettype"]),
-			//			astvalue = Convert.ToDouble(reader["currentvalue"]),
-			//			portfolioId = Convert.ToInt16(reader["portfolioid"]),
-			//			TransactionDate = Convert.ToDateTime(reader["dtofpurchase"]),
-			//			investment = Convert.ToDouble(reader["purchaseprc"]),
-			//			TypeofTransaction = Convert.ToChar(reader["tranmode"])
-			//		}); ;
-			//	}
-			//}
-		}
+		 
 		public void GetCompanyDetails(EquityBase e)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
@@ -322,15 +306,15 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				{
 					_conn.Open();
 				}
-				catch(Exception ex)
+				catch (Exception ex)
 				{
 					string msg = ex.Message;
 				}
-				using var command = new MySqlCommand(@"select * from myfin.equitydetails where isin='"+e.assetId + "';", _conn);
+				using var command = new MySqlCommand(@"select * from myfin.equitydetails where isin='" + e.assetId + "';", _conn);
 
 				using var reader = command.ExecuteReader();
 
-				
+
 				while (reader.Read())
 				{
 					DateTime tim = new DateTime(1000, 1, 1);
@@ -344,16 +328,16 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				}
 			}
 		}
-		public bool UpdatePFSnapshot(int m,int y,int portfolioId,double invst)
+		public bool UpdatePFSnapshot(int m, int y, int portfolioId, double invst)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,month,assettype,assetvalue,dividend,invstmt)
-							 select " + portfolioId + ","+y+","+m+ ",ba.accttype ,amt,0,"+ invst+ " from myfin.AccoutBalance bt " +
+							 select " + portfolioId + "," + y + "," + m + ",ba.accttype ,amt,0," + invst + " from myfin.AccoutBalance bt " +
 							 "join myfin.bankaccounttype ba on ba.accttypeid = bt.accttypeId " +
-							 " where folioid = "+ portfolioId + " and bt.accttypeid in (16, 17);", _conn);
-				 
+							 " where folioid = " + portfolioId + " and bt.accttypeid in (16, 17);", _conn);
+
 				int result = command.ExecuteNonQuery();
 
 				return true;
@@ -366,8 +350,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE myfin.assetsnapshot
-							 set  portfolioid=" + astHstry.portfolioId + ", year=" + astHstry.year + ",month=" + astHstry.month + ",assettype=" + (int)astHstry.Assettype + ",assetvalue=" + astHstry.AssetValue + ",dividend="+ astHstry.Dividend +
-							 ",invstmt=" + astHstry.Investment +";", _conn);
+							 set  portfolioid=" + astHstry.portfolioId + ", year=" + astHstry.year + ",month=" + astHstry.month + ",assettype=" + (int)astHstry.Assettype + ",assetvalue=" + astHstry.AssetValue + ",dividend=" + astHstry.Dividend +
+							 ",invstmt=" + astHstry.Investment + ";", _conn);
 
 				int result = command.ExecuteNonQuery();
 
@@ -383,7 +367,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				using var command = new MySqlCommand(@"REPLACE INTO myfin.assetsnapshot(portfolioid,year,month,assettype,assetvalue,dividend,invstmt)
 							 select " + portfolioId + "," + y + "," + m + ",6, sum(amt),0,0 from myfin.AccoutBalance bt join myfin.bankaccounttype ba " +
 							 "on ba.accttypeid = bt.accttypeId" +
-							 " where folioid="+portfolioId+ " and ba.accttype=6  group by folioid;", _conn);
+							 " where folioid=" + portfolioId + " and ba.accttype=6  group by folioid;", _conn);
 
 				int result = command.ExecuteNonQuery();
 
@@ -397,7 +381,7 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@" SELECT * FROM myfin.dividend 
-					Where isin in (SELECT isin FROM myfin.equitytransactions where portfolioid="+ portfolioId + ") and year(dtupdated)="+year+" and month(dtupdated)="+ month+ "" +
+					Where isin in (SELECT isin FROM myfin.equitytransactions where portfolioid=" + portfolioId + ") and year(dtupdated)=" + year + " and month(dtupdated)=" + month + "" +
 					"	order by isin,dtupdated desc;", _conn);
 				using var reader = command.ExecuteReader();
 
@@ -405,8 +389,8 @@ namespace Git_Sandbox.DailyRunJob.DATA
 				{
 					d.Add(new dividend()
 					{
-						companyid=reader["isin"].ToString() ,
-						dtUpdated= Convert.ToDateTime(reader["dtupdated"]),
+						companyid = reader["isin"].ToString(),
+						dtUpdated = Convert.ToDateTime(reader["dtupdated"]),
 						value = Convert.ToDecimal(reader["dividend"])
 					});
 				}
@@ -437,21 +421,20 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE into myfin.assetsnapshot(portfolioid,month,year,assetvalue,dividend,invstmt,assettype) 
-										values('" + item.portfolioId + "','" + item.month+ "','" + item.year + "','" + 
-											item.AssetValue +"','"+ item.Dividend + "','" + item.Investment + "','"+(int)item.Assettype+"' );", _conn);
+										values('" + item.portfolioId + "','" + item.month + "','" + item.year + "','" +
+											item.AssetValue + "','" + item.Dividend + "','" + item.Investment + "','" + (int)item.Assettype + "' );", _conn);
 				int reader = command.ExecuteNonQuery();
 
 				return true;
 			}
 		}
-
 		public void GetAssetSnapshot(myfinAPI.Model.AssetHistory hstry)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"Select portfolioid,month,year,assetvalue,dividend,invstmt,assettype 
-										from myfin.assetsnapshot where portfolioid=" + hstry.portfolioId + " AND month=" + hstry.month + 
+										from myfin.assetsnapshot where portfolioid=" + hstry.portfolioId + " AND month=" + hstry.month +
 										" AND year=" + hstry.year + " AND assettype=" + (int)hstry.Assettype + ";", _conn);
 				using var reader = command.ExecuteReader();
 
@@ -460,25 +443,25 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					hstry.AssetValue = Convert.ToDecimal(reader["assetvalue"]);
 					hstry.Dividend = Convert.ToDecimal(reader["dividend"]);
 					hstry.Investment = Convert.ToDecimal(reader["invstmt"]);
-				
+
 				}
 
 			}
 
 		}
 
-		public void getLastDividendOfCompany(dividend d)
+		public void getCorpActionOfCompany(dividend d)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"SELECT * FROM myfin.dividend where isin='"+d.companyid+"' order by dtupdated desc limit 1;", _conn);
+				using var command = new MySqlCommand(@"SELECT * FROM myfin.dividend where isin='" + d.companyid + "' order by dtupdated desc limit 1;", _conn);
 				using var reader = command.ExecuteReader();
 
 				while (reader.Read())
 				{
 					d.dtUpdated = Convert.ToDateTime(reader["dtupdated"]);
-					d.lastCrawledDate = Convert.ToDateTime(reader["lastcrawleddt"]);					
+					d.lastCrawledDate = Convert.ToDateTime(reader["lastcrawleddt"]);
 				}
 			}
 		}
@@ -503,10 +486,10 @@ namespace Git_Sandbox.DailyRunJob.DATA
 							creditType = (TranType)Enum.Parse(typeof(TranType), reader["Typeofcredit"].ToString())
 						});
 					}
-					catch(Exception ex)
+					catch (Exception ex)
 					{
 						continue;
-					}						
+					}
 				}
 			}
 		}
@@ -517,49 +500,72 @@ namespace Git_Sandbox.DailyRunJob.DATA
 			{
 				_conn.Open();
 				using var command = new MySqlCommand(@"REPLACE INTO myfin.equitymonthlyprice (id, month,year,price,assetType,openshare,updatedon)
-				values('" + equityItem.assetId+ "'," + month+ "," + yr+ "," +
-				equityItem.livePrice+","+(int)equityItem.assetType+","+equityItem.freefloat+",'"+ DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + "');", _conn);
+				values('" + equityItem.assetId + "'," + month + "," + yr + "," +
+				equityItem.livePrice + "," + (int)equityItem.assetType + "," + equityItem.freefloat + ",'" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + "');", _conn);
 				using var reader = command.ExecuteReader();
 
 				return true;
 			}
 		}
- 
-		public decimal GetHistoricalSharePrice(string id,int month, int year)
-			{
-				using (MySqlConnection _conn = new MySqlConnection(connString))
-				{
-					_conn.Open();
-					using var command = new MySqlCommand(@"SELECT * FROM myfin.equitymonthlyprice where id='" + id + "' AND year="+year+" AND month=" +
-						month+";", _conn);
-					using var reader = command.ExecuteReader();
 
-					while (reader.Read())
-					{
-						return Convert.ToDecimal(reader["price"]);
-					
-					}
-				return 0;
-				}
-			}
-
-		public void GetPf_PPFTransaction(int folioId, IList<PFAccount> pftran,AssetType type)
+		public decimal GetHistoricalSharePrice(string id, int month, int year)
 		{
 			using (MySqlConnection _conn = new MySqlConnection(connString))
 			{
 				_conn.Open();
-				using var command = new MySqlCommand(@"select * from myfin.pf where folioid=" + folioId + " AND acttype="+Convert.ToInt32( type)+" order by dtofchange asc;", _conn);
+				using var command = new MySqlCommand(@"SELECT * FROM myfin.equitymonthlyprice where id='" + id + "' AND year=" + year + " AND month=" +
+					month + ";", _conn);
 				using var reader = command.ExecuteReader();
 
 				while (reader.Read())
 				{
-					pftran.Add(new PFAccount(){  
+					return Convert.ToDecimal(reader["price"]);
+
+				}
+				return 0;
+			}
+		}
+
+		public void GetPf_PPFTransaction(int folioId, IList<PFAccount> pftran, AssetType type)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"select * from myfin.pf where folioid=" + folioId + " AND acttype=" + Convert.ToInt32(type) + " order by dtofchange asc;", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					pftran.Add(new PFAccount()
+					{
 						DateOfTransaction = Convert.ToDateTime(reader["dtofchange"]),
 						InvestmentEmp = Convert.ToDecimal(reader["emp"]),
-						InvestmentEmplr= Convert.ToDecimal(reader["employer"]),
-						Pension= Convert.ToDecimal(reader["pension"]),
-						TypeOfTransaction= Enum.Parse<TranType>(reader["typeofcredit"].ToString())
-					});			
+						InvestmentEmplr = Convert.ToDecimal(reader["employer"]),
+						Pension = Convert.ToDecimal(reader["pension"]),
+						TypeOfTransaction = Enum.Parse<TranType>(reader["typeofcredit"].ToString())
+					});
+				}
+			}
+		}
+		public void GetPf_PPFTransaction(int folioId, IList<PFAccount> pftran, AssetType type, int year)
+		{
+			using (MySqlConnection _conn = new MySqlConnection(connString))
+			{
+				_conn.Open();
+				using var command = new MySqlCommand(@"select * from myfin.pf where folioid=" + folioId + " " +
+					"AND acttype=" + Convert.ToInt32(type) + " AND YEAR(dtofchange)="+ year +"  order by dtofchange asc;", _conn);
+				using var reader = command.ExecuteReader();
+
+				while (reader.Read())
+				{
+					pftran.Add(new PFAccount()
+					{
+						DateOfTransaction = Convert.ToDateTime(reader["dtofchange"]),
+						InvestmentEmp = Convert.ToDecimal(reader["emp"]),
+						InvestmentEmplr = Convert.ToDecimal(reader["employer"]),
+						Pension = Convert.ToDecimal(reader["pension"]),
+						TypeOfTransaction = Enum.Parse<TranType>(reader["typeofcredit"].ToString())
+					});
 				}
 			}
 		}
@@ -579,11 +585,11 @@ namespace Git_Sandbox.DailyRunJob.DATA
 					itemlist.Add(
 						new EquityBase()
 						{
-						 equityName=reader["name"].ToString(),
+							equityName = reader["name"].ToString(),
 							assetId = reader["ISIN"].ToString()
 						});
 				}
- 			}
+			}
 		}
 	}
 }

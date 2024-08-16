@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Git_Sandbox.Model
+﻿namespace Git_Sandbox.Model
 {
 	public class Portfolio
 	{
